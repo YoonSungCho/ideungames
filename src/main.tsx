@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/jua';
 import './app/styles/global.css';
+import './app/pwa';
 import { App } from './app/App';
 
 createRoot(document.getElementById('root')!).render(

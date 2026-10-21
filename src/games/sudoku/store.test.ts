@@ -21,14 +21,23 @@ describe('sudoku store', () => {
     expect(s().game!.mistakes).toBe(0);
   });
 
-  it('숫자 먼저 → 칸: 들고 있던 숫자를 놓는다', () => {
+  it('칸을 고르지 않고 숫자 카드를 누르면 하이라이트만 토글된다', () => {
     const i = firstEmpty();
     const n = s().game!.solution[i];
     s().pressNumber(n);
-    expect(s().armed).toBe(n);
+    expect(s().focus).toBe(n);
     s().selectCell(i);
+    expect(s().game!.values[i]).toBe(0);
+    expect(s().focus).toBe(null);
+    s().pressNumber(n);
     expect(s().game!.values[i]).toBe(n);
-    expect(s().armed).toBe(n);
+    expect(s().focus).toBe(n);
+  });
+
+  it('숫자가 있는 칸을 누르면 그 숫자가 하이라이트된다', () => {
+    const given = s().game!.givens.findIndex((v) => v !== 0);
+    s().selectCell(given);
+    expect(s().focus).toBe(s().game!.givens[given]);
   });
 
   it('오답은 실수로 기록되고, 되돌리기로 되돌릴 수 있다', () => {
@@ -70,6 +79,14 @@ describe('sudoku store', () => {
     while (s().game!.status === 'playing') s().hint(Infinity);
     expect(s().game!.status).toBe('won');
     expect(s().records.medium?.wins).toBe(1);
+    expect(s().game!.prevBestMs).toBeUndefined();
+    const first = s().records.medium!.bestMs!;
+
+    s().newGame('medium');
+    s().tick(first + 5000);
+    while (s().game!.status === 'playing') s().hint(Infinity);
+    expect(s().game!.prevBestMs).toBe(first);
+    expect(s().records.medium).toEqual({ wins: 2, bestMs: first });
   });
 
   it('힌트 제한을 넘으면 동작하지 않는다', () => {

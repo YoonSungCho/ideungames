@@ -1,5 +1,4 @@
 import { formatTime } from '@/shared/format';
-import { useSettings } from '@/shared/settings/store';
 import { Button } from '@/shared/ui/Button';
 import { StarIcon } from '@/shared/ui/icons';
 import { Robot } from '@/shared/ui/Robot';
@@ -10,7 +9,6 @@ import styles from './Sudoku.module.css';
 export function DifficultyPicker({ onStart, onResume }: { onStart: () => void; onResume?: () => void }) {
   const newGame = useSudoku((s) => s.newGame);
   const records = useSudoku((s) => s.records);
-  const challenge = useSettings((s) => s.mode) === 'challenge';
 
   return (
     <div className={styles.picker}>
@@ -49,7 +47,7 @@ export function DifficultyPicker({ onStart, onResume }: { onStart: () => void; o
               <span className={styles.diffName}>{DIFFICULTY_LABEL[d]}</span>
               <span className={styles.diffMeta}>
                 {rec?.wins ? `${rec.wins}번 성공` : '도전해 봐!'}
-                {challenge && rec?.bestMs !== undefined && ` · 최고 ${formatTime(rec.bestMs)}`}
+                {rec?.bestMs !== undefined && ` · 🏆 ${formatTime(rec.bestMs)}`}
               </span>
             </button>
           );

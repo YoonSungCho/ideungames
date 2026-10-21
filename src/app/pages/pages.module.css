@@ -104,3 +104,9 @@
 }
 .switch:checked { background: var(--success); }
 .switch:checked::after { transform: translateX(24px); }
+.infoCard { display: grid; gap: 12px; background: var(--surface); padding: 16px 18px; border-radius: 20px; box-shadow: var(--shadow-sm); }
+.infoRow { display: flex; justify-content: space-between; gap: 12px; }
+.infoRow span { color: var(--text-muted); }
+.infoRow b { font-weight: normal; text-align: right; }
+.infoRow small { color: var(--text-muted); }
+.infoStatus { margin: 0; text-align: center; color: var(--text-muted); }

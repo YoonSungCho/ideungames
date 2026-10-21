@@ -5,11 +5,20 @@ import styles from './Sudoku.module.css';
 export function Board() {
   const game = useSudoku((s) => s.game)!;
   const selected = useSudoku((s) => s.selected);
-  const armed = useSudoku((s) => s.armed);
+  const focus = useSudoku((s) => s.focus);
   const event = useSudoku((s) => s.event);
   const selectCell = useSudoku((s) => s.selectCell);
   const { spec, values, givens, solution, notes, hinted } = game;
-  const focusValue = armed ?? (selected !== null ? values[selected] : 0);
+  const focusValue = focus ?? 0;
+
+  // 하이라이트 숫자가 이미 들어 있는 행/열/박스 → 그 숫자가 더 들어갈 수 없는 곳
+  const covered = new Set<string>();
+  if (focusValue) {
+    values.forEach((v, i) => {
+      if (v !== focusValue) return;
+      covered.add(`r${rowOf(i, spec)}`).add(`c${colOf(i, spec)}`).add(`b${boxOf(i, spec)}`);
+    });
+  }
 
   return (
     <div
@@ -21,10 +30,11 @@ export function Board() {
       {values.map((v, i) => {
         const r = rowOf(i, spec);
         const c = colOf(i, spec);
-        const isPeer =
-          selected !== null &&
-          selected !== i &&
-          (rowOf(selected, spec) === r || colOf(selected, spec) === c || boxOf(selected, spec) === boxOf(i, spec));
+        const isPeer = focusValue
+          ? covered.has(`r${r}`) || covered.has(`c${c}`) || covered.has(`b${boxOf(i, spec)}`)
+          : selected !== null &&
+            selected !== i &&
+            (rowOf(selected, spec) === r || colOf(selected, spec) === c || boxOf(selected, spec) === boxOf(i, spec));
         const wrong = v !== 0 && v !== solution[i];
         const flash = event?.cells.includes(i) ? event.kind : null;
         const cls = [

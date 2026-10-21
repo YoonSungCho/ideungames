@@ -21,7 +21,8 @@ export function WinModal({ onPickDifficulty }: { onPickDifficulty: () => void })
   const slips = game.mistakes + game.hintsUsed;
   const stars = slips === 0 ? 3 : slips <= 2 ? 2 : 1;
   const best = records[game.difficulty]?.bestMs;
-  const isRecord = best !== undefined && best === game.elapsedMs;
+  const firstClear = game.prevBestMs === undefined;
+  const newRecord = !firstClear && game.elapsedMs < game.prevBestMs!;
 
   return (
     <>
@@ -36,14 +37,22 @@ export function WinModal({ onPickDifficulty }: { onPickDifficulty: () => void })
             ))}
           </div>
           <p className={styles.winSub}>스도쿠 {DIFFICULTY_LABEL[game.difficulty]} 완성!</p>
-          {mode === 'challenge' && (
-            <dl className={styles.winStats}>
-              <div><dt>시간</dt><dd>{formatTime(game.elapsedMs)}{isRecord && <em> 신기록!</em>}</dd></div>
-              <div><dt>최고 기록</dt><dd>{best !== undefined ? formatTime(best) : '-'}</dd></div>
-              <div><dt>실수</dt><dd>{game.mistakes}</dd></div>
-              <div><dt>힌트</dt><dd>{game.hintsUsed}</dd></div>
-            </dl>
+          {newRecord && (
+            <p className={styles.recordBanner}>
+              🏆 최고 기록 갱신! <s>{formatTime(game.prevBestMs!)}</s> → <b>{formatTime(game.elapsedMs)}</b>
+            </p>
           )}
+          {firstClear && <p className={styles.recordBanner}>🎉 첫 기록이에요!</p>}
+          <dl className={styles.winStats}>
+            <div><dt>이번 기록</dt><dd>{formatTime(game.elapsedMs)}</dd></div>
+            <div><dt>최고 기록</dt><dd>{best !== undefined ? formatTime(best) : '-'}</dd></div>
+            {mode === 'challenge' && (
+              <>
+                <div><dt>실수</dt><dd>{game.mistakes}</dd></div>
+                <div><dt>힌트</dt><dd>{game.hintsUsed}</dd></div>
+              </>
+            )}
+          </dl>
           <div className={styles.winActions}>
             <Button size="lg" onClick={() => newGame(game.difficulty)}>한 판 더!</Button>
             <Button variant="secondary" onClick={onPickDifficulty}>난이도 바꾸기</Button>

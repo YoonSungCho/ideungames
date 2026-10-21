@@ -1,25 +1,38 @@
 import { useEffect } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import { applyUpdate, usePwa } from './pwa';
+import styles from './UpdatePrompt.module.css';
 
-/** 오프라인 준비가 끝나면 잠깐 알려준다. (registerType: autoUpdate라 새 버전은 자동 적용) */
+/** 새 버전 알림 + 오프라인 준비 완료 토스트 */
 export function UpdatePrompt() {
-  const { offlineReady: [offlineReady, setOfflineReady] } = useRegisterSW();
+  const { needRefresh, offlineReady, dismissUpdate, dismissOfflineReady } = usePwa();
+
   useEffect(() => {
     if (!offlineReady) return;
-    const t = setTimeout(() => setOfflineReady(false), 3000);
+    const t = setTimeout(dismissOfflineReady, 3000);
     return () => clearTimeout(t);
-  }, [offlineReady, setOfflineReady]);
-  if (!offlineReady) return null;
-  return (
-    <div
-      role="status"
-      onClick={() => setOfflineReady(false)}
-      style={{
-        position: 'fixed', top: 'calc(12px + env(safe-area-inset-top))', left: '50%', translate: '-50% 0', zIndex: 60,
-        background: 'var(--text)', color: '#fff', padding: '8px 16px', borderRadius: 999, whiteSpace: 'nowrap', cursor: 'pointer',
-      }}
-    >
-      인터넷 없이도 할 수 있어요 ✓
-    </div>
-  );
+  }, [offlineReady, dismissOfflineReady]);
+
+  if (needRefresh) {
+    return (
+      <div className={styles.banner} role="alertdialog" aria-label="새 버전 알림">
+        <span className={styles.text}>✨ 새 버전이 있어요!</span>
+        <button className={styles.primary} onClick={() => void applyUpdate()}>
+          업데이트
+        </button>
+        <button className={styles.later} onClick={dismissUpdate}>
+          나중에
+        </button>
+      </div>
+    );
+  }
+
+  if (offlineReady) {
+    return (
+      <div className={styles.banner} role="status" onClick={dismissOfflineReady}>
+        <span className={styles.text}>인터넷 없이도 할 수 있어요 ✓</span>
+      </div>
+    );
+  }
+
+  return null;
 }

@@ -50,7 +50,7 @@ function useKeyboard(enabled: boolean, maxHints: number) {
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') return s.erase();
       if (e.key.toLowerCase() === 'n') return s.toggleNoteMode();
       if (e.key.toLowerCase() === 'h') return s.hint(maxHints);
-      if (e.key === 'Escape') useSudoku.setState({ selected: null, armed: null });
+      if (e.key === 'Escape') useSudoku.setState({ selected: null, focus: null });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -79,14 +79,16 @@ export default function SudokuGame() {
   return (
     <div className={styles.play}>
       <div className={styles.side}>
-        <StatusBar challenge={challenge} onNewGame={() => setPicking(true)} />
+        <StatusBar showMistakes={challenge} onNewGame={() => setPicking(true)} />
         <Coach />
       </div>
       <div className={styles.boardWrap}>
         <Board />
       </div>
-      <div className={styles.inputs}>
+      <div className={styles.tools}>
         <Controls maxHints={maxHints} />
+      </div>
+      <div className={styles.padArea}>
         <NumberPad />
       </div>
       {game.status === 'won' && <WinModal onPickDifficulty={() => setPicking(true)} />}

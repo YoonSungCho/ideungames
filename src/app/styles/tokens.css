@@ -27,10 +27,10 @@
   --num-4: #9b6bff;
 
   /* 보드 하이라이트 */
-  --given-bg: #f6f3ff;
-  --peer-bg: #efebff;
-  --same-bg: #ddd5ff;
-  --selected-bg: #cfc5ff;
+  --given-bg: #faf8ff;
+  --peer-bg: #e9e3ff;
+  --same-bg: #cbbfff;
+  --selected-bg: #d6ccff;
 
   --radius-pill: 999px;
   --radius-xl: 26px;

@@ -1,0 +1,25 @@
+.banner {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  white-space: nowrap;
+  animation: drop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.text { padding: 4px 8px 4px 0; overflow: hidden; text-overflow: ellipsis; }
+.primary, .later {
+  font: inherit; border: none; cursor: pointer; border-radius: 999px; padding: 8px 14px; flex: none;
+}
+.primary { background: var(--accent); color: var(--text); }
+.later { background: transparent; color: rgb(255 255 255 / 0.7); padding-left: 6px; }
+@keyframes drop { from { transform: translateY(-30px); opacity: 0; } }

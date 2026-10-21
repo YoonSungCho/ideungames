@@ -24,6 +24,8 @@ export interface SudokuGame {
   hintsUsed: number;
   elapsedMs: number;
   status: 'playing' | 'won';
+  /** 이번 판 시작 전의 최고 기록 (클리어 시 저장, 신기록 판정용) */
+  prevBestMs?: number;
 }
 
 export interface SudokuRecord {
@@ -42,8 +44,8 @@ interface SudokuState {
   game: SudokuGame | null;
   history: Snapshot[];
   selected: number | null;
-  /** 카드 먼저 선택 모드에서 선택된 숫자 */
-  armed: number | null;
+  /** 하이라이트 중인 숫자 — 이 숫자가 있는 행/열/박스를 보드에 표시 */
+  focus: number | null;
   noteMode: boolean;
   event: SudokuEvent | null;
   records: Partial<Record<Difficulty, SudokuRecord>>;
@@ -88,6 +90,7 @@ export const useSudoku = create<SudokuState>()(
         if (g.values.every((v, i) => v === g.solution[i])) {
           g.status = 'won';
           const prev = get().records[g.difficulty] ?? { wins: 0 };
+          g.prevBestMs = prev.bestMs;
           const records = {
             ...get().records,
             [g.difficulty]: {
@@ -142,7 +145,7 @@ export const useSudoku = create<SudokuState>()(
         game: null,
         history: [],
         selected: null,
-        armed: null,
+        focus: null,
         noteMode: false,
         event: null,
         records: {},
@@ -166,36 +169,32 @@ export const useSudoku = create<SudokuState>()(
             },
             history: [],
             selected: null,
-            armed: null,
+            focus: null,
             noteMode: false,
             event: makeEvent('start'),
           });
         },
 
+        // 칸을 누르면 선택만 한다. 숫자가 있는 칸이면 그 숫자를 하이라이트.
         selectCell: (index) => {
-          const { game, armed } = get();
+          const { game } = get();
           if (!game) return;
-          if (armed !== null && isEditable(game, index)) {
-            // 카드 먼저 모드: 고른 숫자를 바로 놓는다
-            placeAt(index, armed);
-            set({ selected: null });
-            return;
-          }
           playSound('select');
-          set({ selected: index });
+          set({ selected: index, focus: game.values[index] || null });
         },
 
+        // 숫자 카드: 고른 빈칸에 입력 + 그 숫자 하이라이트. 고른 빈칸이 없으면 하이라이트만 켜고/끈다.
         pressNumber: (n) => {
-          const { game, selected, armed, noteMode } = get();
+          const { game, selected, focus, noteMode } = get();
           if (!game || game.status !== 'playing') return;
-          if (!noteMode && remainingOf(game, n) === 0) return;
-          if (selected !== null && isEditable(game, selected)) {
+          const canPlace = noteMode || remainingOf(game, n) > 0;
+          if (canPlace && selected !== null && isEditable(game, selected)) {
             placeAt(selected, n);
+            set({ focus: n });
             return;
           }
-          // 칸을 고르지 않았으면 숫자를 "들고" 있다가 칸을 누르면 놓는다
           playSound('select');
-          set({ armed: armed === n ? null : n, selected: null });
+          set({ focus: focus === n ? null : n });
         },
 
         erase: () => {
@@ -250,13 +249,11 @@ export const useSudoku = create<SudokuState>()(
           const { game, selected } = get();
           if (!game) return;
           const size = game.spec.size;
-          if (selected === null) {
-            set({ selected: 0, armed: null });
-            return;
-          }
-          const r = (Math.floor(selected / size) + dRow + size) % size;
-          const c = ((selected % size) + dCol + size) % size;
-          set({ selected: r * size + c, armed: null });
+          const next =
+            selected === null
+              ? 0
+              : ((Math.floor(selected / size) + dRow + size) % size) * size + (((selected % size) + dCol + size) % size);
+          set({ selected: next, focus: game.values[next] || null });
         },
 
         tick: (ms) => {
@@ -265,7 +262,7 @@ export const useSudoku = create<SudokuState>()(
           set({ game: { ...game, elapsedMs: game.elapsedMs + ms } });
         },
 
-        quit: () => set({ game: null, history: [], selected: null, armed: null, event: null }),
+        quit: () => set({ game: null, history: [], selected: null, focus: null, event: null }),
 
         resetRecords: () => set({ records: {} }),
       };

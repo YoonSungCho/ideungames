@@ -11,12 +11,12 @@ const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 export function Coach() {
   const event = useSudoku((s) => s.event);
   const name = useSettings((s) => s.playerName);
-  const [line, setLine] = useState<{ text: string; mood: RobotMood }>({ text: '숫자 카드를 골라 봐!', mood: 'idle' });
+  const [line, setLine] = useState<{ text: string; mood: RobotMood }>({ text: '빈칸을 누르고 숫자 카드를 골라 봐!', mood: 'idle' });
 
   useEffect(() => {
     if (!event) return;
     const lines: Record<typeof event.kind, () => { text: string; mood: RobotMood }> = {
-      start: () => ({ text: `${callName(name)}, 같이 풀어 보자!`, mood: 'happy' }),
+      start: () => ({ text: `${callName(name)}, 빈칸을 누르고 숫자를 골라 봐!`, mood: 'happy' }),
       place: () => ({ text: pick(['좋아!', '맞았어!', '멋져!', '역시!', '잘하는데?']), mood: 'happy' }),
       wrong: () => ({ text: pick(['앗, 다시 생각해 볼까?', '음… 그 숫자는 아닌 것 같아', '괜찮아, 다시 해 보자!']), mood: 'oops' }),
       complete: () => ({ text: pick(['한 줄 완성! 대단해!', '와, 다 채웠다!', '반짝반짝 완성!']), mood: 'cheer' }),

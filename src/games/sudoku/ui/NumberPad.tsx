@@ -3,7 +3,7 @@ import styles from './Sudoku.module.css';
 
 export function NumberPad() {
   const game = useSudoku((s) => s.game)!;
-  const armed = useSudoku((s) => s.armed);
+  const focus = useSudoku((s) => s.focus);
   const selected = useSudoku((s) => s.selected);
   const noteMode = useSudoku((s) => s.noteMode);
   const pressNumber = useSudoku((s) => s.pressNumber);
@@ -21,7 +21,7 @@ export function NumberPad() {
             className={[
               styles.card,
               styles[`c${n}`],
-              armed === n && styles.armed,
+              focus === n && styles.armed,
               done && styles.done,
               noteMode && styles.noteCard,
             ]
@@ -29,8 +29,8 @@ export function NumberPad() {
               .join(' ')}
             onClick={() => pressNumber(n)}
             disabled={done && !noteMode}
-            aria-pressed={armed === n}
-            aria-label={`숫자 ${n}, ${done ? '모두 찾음' : `${left}개 남음`}${cellReady ? '' : ', 눌러서 들고 있기'}`}
+            aria-pressed={focus === n}
+            aria-label={`숫자 ${n}, ${done ? '모두 찾음' : `${left}개 남음`}${cellReady ? '' : ', 빈칸을 먼저 골라요'}`}
           >
             <span className={styles.cardNum}>{n}</span>
             <span className={styles.badge}>{done ? '✓' : left}</span>
