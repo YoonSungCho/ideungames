@@ -1,0 +1,19 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 100;
+}
+.piece {
+  position: absolute;
+  top: -20px;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  0% { transform: translate3d(0, 0, 0) rotate(var(--r)); opacity: 1; }
+  100% { transform: translate3d(40px, 110vh, 0) rotate(calc(var(--r) + 720deg)); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .layer { display: none; }
+}

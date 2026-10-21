@@ -1,0 +1,40 @@
+:root {
+  color-scheme: light;
+  --font: 'Jua', ui-rounded, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+
+  --bg: #fff8ef;
+  --bg-pattern: #ffeedd;
+  --surface: #ffffff;
+  --surface-2: #f6f3ff;
+  --border: #e4dff5;
+  --grid-line: #ddd7f3;
+  --text: #2f2a55;
+  --text-muted: #7d77a3;
+
+  --primary: #6b5ce7;
+  --primary-shadow: #4b3fb8;
+  --on-primary: #ffffff;
+  --accent: #ffd166;
+  --success: #2ec4a0;
+  --danger: #ef476f;
+  --danger-bg: #ffe5ec;
+  --hint: #f59e0b;
+
+  /* 숫자별 색 (카드/난이도 공용) */
+  --num-1: #ff7a59;
+  --num-2: #3fa9f5;
+  --num-3: #2ec4a0;
+  --num-4: #9b6bff;
+
+  /* 보드 하이라이트 */
+  --given-bg: #f6f3ff;
+  --peer-bg: #efebff;
+  --same-bg: #ddd5ff;
+  --selected-bg: #cfc5ff;
+
+  --radius-pill: 999px;
+  --radius-xl: 26px;
+  --shadow-sm: 0 2px 8px rgb(60 40 120 / 0.1);
+  --shadow-md: 0 8px 24px rgb(60 40 120 / 0.14);
+  --shadow-lg: 0 20px 50px rgb(40 30 90 / 0.25);
+}

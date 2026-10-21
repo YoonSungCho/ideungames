@@ -1,0 +1,27 @@
+.button {
+  font: inherit;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 12px 22px;
+  font-size: 1.1rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.button:active { transform: translateY(2px) scale(0.98); }
+.button:disabled { opacity: 0.45; cursor: default; }
+.lg { padding: 16px 28px; font-size: 1.3rem; }
+.primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 5px 0 var(--primary-shadow);
+}
+.primary:active { box-shadow: 0 2px 0 var(--primary-shadow); }
+.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 5px 0 var(--border);
+}
+.secondary:active { box-shadow: 0 2px 0 var(--border); }
+.ghost { background: transparent; color: var(--text-muted); }

@@ -1,0 +1,59 @@
+.robot {
+  --robot-body: #ffffff;
+  --robot-dark: #3b3567;
+  --robot-screen: #2b2a4c;
+  --robot-eye: #6ee7f9;
+  --robot-accent: #ffd166;
+  --robot-cheek: #ff8fab;
+  overflow: visible;
+  animation: bob 2.6s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.antenna {
+  animation: blink-glow 1.8s ease-in-out infinite;
+}
+
+.eyes {
+  animation: blink 4.5s infinite;
+  transform-origin: 50% 92px;
+}
+
+.cheer {
+  animation: jump 0.7s ease-in-out infinite;
+}
+
+.happy {
+  animation: bob 1.4s ease-in-out infinite;
+}
+
+.oops {
+  animation: shake 0.4s ease-in-out 2;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes jump {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  40% { transform: translateY(-16px) scale(0.97, 1.03); }
+  80% { transform: translateY(0) scale(1.04, 0.96); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-3deg); }
+  75% { transform: translateX(5px) rotate(3deg); }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes blink-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25) drop-shadow(0 0 6px #ffd166); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot, .eyes, .antenna { animation: none; }
+}

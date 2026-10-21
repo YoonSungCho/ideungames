@@ -1,0 +1,246 @@
+/* ───────── 레이아웃 ───────── */
+.play {
+  --board: clamp(240px, min(calc(100vw - 32px), calc(100dvh - 400px)), 520px);
+  display: grid;
+  grid-template-areas: 'side' 'board' 'inputs';
+  justify-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+}
+.side { grid-area: side; width: var(--board); display: grid; gap: 10px; }
+.boardWrap { grid-area: board; }
+.inputs { grid-area: inputs; width: var(--board); display: grid; gap: 14px; }
+
+@media (orientation: landscape) and (min-width: 720px) {
+  .play {
+    --board: clamp(260px, min(calc(100dvh - 110px), calc(100vw - 440px)), 620px);
+    grid-template-areas: 'board side' 'board inputs';
+    grid-template-columns: var(--board) minmax(280px, 360px);
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 20px 32px;
+    padding-top: 16px;
+  }
+  .side, .inputs { width: 100%; }
+  .inputs { align-self: end; }
+  .pad { grid-template-columns: repeat(2, 1fr) !important; }
+  .card { aspect-ratio: 1.5; }
+}
+
+/* ───────── 상단 상태 ───────── */
+.status { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.diffChip {
+  font: inherit; border: none; cursor: pointer;
+  padding: 8px 14px; border-radius: var(--radius-pill);
+  font-size: 1.05rem; color: var(--text);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.chipHint { font-size: 0.8rem; color: var(--text-muted); margin-left: 4px; }
+.stats { display: flex; gap: 8px; }
+.stat {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+  color: var(--text-muted); font-size: 0.95rem;
+}
+.stat b { color: var(--text); font-weight: normal; font-variant-numeric: tabular-nums; }
+
+/* ───────── 로봇 코치 ───────── */
+.coach { display: flex; align-items: center; gap: 8px; min-height: 72px; }
+.bubble {
+  position: relative; margin: 0;
+  background: var(--surface); padding: 10px 16px;
+  border-radius: 18px; box-shadow: var(--shadow-sm);
+  font-size: 1.1rem; animation: bubble-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bubble::before {
+  content: ''; position: absolute; left: -8px; top: 50%; translate: 0 -50%;
+  border: 8px solid transparent; border-right-color: var(--surface); border-left: 0;
+}
+@keyframes bubble-in { from { transform: scale(0.7); opacity: 0; } }
+
+/* ───────── 보드 ───────── */
+.board {
+  --line: #3b3567;
+  width: var(--board); aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-rows: repeat(var(--n), 1fr);
+  background: var(--surface);
+  border: 4px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  touch-action: manipulation;
+}
+.cell {
+  --num: var(--text);
+  position: relative;
+  display: grid; place-items: center;
+  font: inherit;
+  font-size: calc(var(--board) / var(--n) * 0.5);
+  line-height: 1;
+  color: var(--num);
+  background: var(--surface);
+  border: none;
+  border-right: 1.5px solid var(--grid-line);
+  border-bottom: 1.5px solid var(--grid-line);
+  padding: 0; cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.cell:focus-visible { outline: none; } /* 선택 표시(.selected)가 포커스 역할 */
+.lastCol { border-right: none; }
+.lastRow { border-bottom: none; }
+.boxRight { border-right: 4px solid var(--line); }
+.boxBottom { border-bottom: 4px solid var(--line); }
+
+.given { background: var(--given-bg); color: var(--text); }
+.user { color: var(--primary); }
+.hinted { color: var(--hint); }
+.peer { background: var(--peer-bg); }
+.same { background: var(--same-bg); }
+.selected { background: var(--selected-bg); }
+.selected::after {
+  content: ''; position: absolute; inset: 3px; pointer-events: none;
+  border: 4px solid var(--primary); border-radius: 12px;
+}
+.wrong { color: var(--danger); background: var(--danger-bg); }
+.wrong > span { animation: shake 0.4s; }
+
+.notes {
+  display: grid; width: 82%; height: 82%;
+  font-size: calc(var(--board) / var(--n) * 0.22);
+  color: var(--text-muted);
+}
+.notes > span { display: grid; place-items: center; }
+.noteFocus { color: var(--primary); font-size: 1.15em; }
+
+.fx_place, .fx_hint { animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); display: inline-block; }
+.fx_complete, .fx_win { animation: bounce 0.6s ease; display: inline-block; }
+.fx_wrong { animation: shake 0.4s; display: inline-block; }
+.sparkle {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle, rgb(255 209 102 / 0.9), transparent 70%);
+  animation: sparkle 0.7s ease-out forwards;
+}
+
+@keyframes pop { 0% { transform: scale(0.3); } 100% { transform: scale(1); } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14%) scale(1.15); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@keyframes sparkle { from { opacity: 1; transform: scale(0.4); } to { opacity: 0; transform: scale(1.4); } }
+
+/* ───────── 도구 ───────── */
+.controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tool {
+  font: inherit; border: none; cursor: pointer; background: transparent;
+  display: grid; justify-items: center; gap: 4px;
+  color: var(--text-muted); padding: 4px 0;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.tool:disabled { opacity: 0.35; cursor: default; }
+.toolIcon {
+  position: relative; display: grid; place-items: center;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: var(--surface); box-shadow: var(--shadow-sm);
+  transition: transform 0.12s, background 0.2s, color 0.2s;
+}
+.tool:active:not(:disabled) .toolIcon { transform: scale(0.92); }
+.toolActive .toolIcon { background: var(--primary); color: var(--on-primary); }
+.toolActive { color: var(--primary); }
+.toolBadge {
+  position: absolute; top: -4px; right: -10px;
+  min-width: 22px; padding: 2px 6px; border-radius: 999px;
+  background: var(--accent); color: var(--text); font-size: 0.7rem;
+}
+.toolLabel { font-size: 0.9rem; }
+
+/* ───────── 숫자 카드 ───────── */
+.pad { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 10px; }
+.card {
+  --c: var(--primary);
+  position: relative; font: inherit; cursor: pointer;
+  aspect-ratio: 0.85;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--c);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--c) 35%, #fff), var(--shadow-sm);
+  display: grid; place-items: center;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s, background 0.2s;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.card:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--c) 35%, #fff); }
+.c1 { --c: var(--num-1); }
+.c2 { --c: var(--num-2); }
+.c3 { --c: var(--num-3); }
+.c4 { --c: var(--num-4); }
+.cardNum { font-size: clamp(2rem, calc(var(--board) / 8), 3.2rem); line-height: 1; }
+.badge {
+  position: absolute; top: -10px; right: -8px;
+  min-width: 30px; height: 30px; padding: 0 8px;
+  display: grid; place-items: center;
+  border-radius: 999px; background: var(--c); color: #fff;
+  font-size: 1rem; box-shadow: var(--shadow-sm);
+  border: 3px solid var(--bg);
+}
+.armed {
+  background: var(--c); color: #fff; border-color: #fff;
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 10px 0 color-mix(in srgb, var(--c) 55%, #000), var(--shadow-md);
+}
+.armed .badge { background: #fff; color: var(--c); }
+.noteCard .cardNum { font-size: clamp(1.4rem, calc(var(--board) / 12), 2.2rem); opacity: 0.75; }
+.noteCard { border-style: dashed; border-color: color-mix(in srgb, var(--c) 50%, #fff); }
+.done { opacity: 0.4; filter: grayscale(0.6); cursor: default; box-shadow: none; }
+.done .badge { background: var(--success); }
+
+/* ───────── 난이도 선택 ───────── */
+.picker { display: grid; gap: 20px; justify-items: center; padding: 16px; max-width: 560px; margin: 0 auto; }
+.pickerIntro { display: flex; align-items: center; gap: 12px; }
+.bubbleLarge {
+  margin: 0; background: var(--surface); padding: 14px 18px; border-radius: 20px;
+  box-shadow: var(--shadow-sm); font-size: 1.15rem; line-height: 1.5;
+}
+.bubbleLarge b { color: var(--primary); font-weight: normal; }
+.resume { width: 100%; }
+.diffList { display: grid; gap: 14px; width: 100%; }
+.diffCard {
+  --d: var(--num-3);
+  font: inherit; cursor: pointer; text-align: left;
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  column-gap: 16px; align-items: center;
+  padding: 18px 22px; border: none; border-radius: var(--radius-xl);
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--d) 40%, #fff), var(--shadow-sm);
+  transition: transform 0.12s;
+}
+.diffCard:active { transform: translateY(4px); }
+.diffStars { grid-row: span 2; display: flex; color: var(--d); }
+.diffName { font-size: 1.6rem; }
+.diffMeta { font-size: 0.95rem; color: var(--text-muted); }
+.d_easy { --d: var(--num-3); }
+.d_medium { --d: var(--num-2); }
+.d_hard { --d: var(--num-1); }
+.diffChip.d_easy, .diffChip.d_medium, .diffChip.d_hard { box-shadow: inset 0 0 0 2px var(--d), var(--shadow-sm); }
+
+/* ───────── 클리어 ───────── */
+.win { display: grid; justify-items: center; gap: 8px; }
+.win h2 { margin: 4px 0 0; font-size: 2rem; font-weight: normal; color: var(--primary); }
+.stars { display: flex; gap: 6px; }
+.starOn { color: var(--accent); animation: star-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; filter: drop-shadow(0 3px 0 #e0a800); }
+.starOff { color: var(--border); }
+@keyframes star-pop { from { transform: scale(0) rotate(-90deg); } }
+.winSub { margin: 0; color: var(--text-muted); font-size: 1.1rem; }
+.winStats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; margin: 8px 0; }
+.winStats div { background: var(--surface-2); border-radius: 14px; padding: 8px; }
+.winStats dt { font-size: 0.85rem; color: var(--text-muted); }
+.winStats dd { margin: 0; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.winStats em { font-style: normal; color: var(--danger); font-size: 0.9rem; }
+.winActions { display: grid; gap: 10px; width: 100%; margin-top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx_place, .fx_hint, .fx_complete, .fx_win, .fx_wrong, .wrong > span, .sparkle, .starOn, .bubble { animation: none; }
+}
