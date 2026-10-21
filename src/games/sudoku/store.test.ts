@@ -7,7 +7,7 @@ const firstEmpty = () => s().game!.values.findIndex((v) => v === 0);
 describe('sudoku store', () => {
   beforeEach(() => {
     localStorage.clear();
-    s().newGame('medium');
+    s().newGame('medium', 4);
   });
 
   it('칸 먼저 → 숫자: 정답이면 놓이고 남은 개수가 줄어든다', () => {
@@ -78,20 +78,47 @@ describe('sudoku store', () => {
   it('힌트와 정답으로 모두 채우면 승리하고 기록이 남는다', () => {
     while (s().game!.status === 'playing') s().hint(Infinity);
     expect(s().game!.status).toBe('won');
-    expect(s().records.medium?.wins).toBe(1);
+    expect(s().records['4-medium']?.wins).toBe(1);
     expect(s().game!.prevBestMs).toBeUndefined();
-    const first = s().records.medium!.bestMs!;
+    const first = s().records['4-medium']!.bestMs!;
 
     s().newGame('medium');
     s().tick(first + 5000);
     while (s().game!.status === 'playing') s().hint(Infinity);
     expect(s().game!.prevBestMs).toBe(first);
-    expect(s().records.medium).toEqual({ wins: 2, bestMs: first });
+    expect(s().records['4-medium']).toEqual({ wins: 2, bestMs: first });
   });
 
   it('힌트 제한을 넘으면 동작하지 않는다', () => {
     s().hint(1);
     s().hint(1);
     expect(s().game!.hintsUsed).toBe(1);
+  });
+
+  it.each([6, 8] as const)('%ix%i 게임: 크기를 기억하고 크기별로 기록한다', (size) => {
+    s().newGame('easy', size);
+    expect(s().size).toBe(size);
+    expect(s().game!.values).toHaveLength(size * size);
+    const g = s().game!;
+    g.values.forEach((v, i) => {
+      if (v) return;
+      s().selectCell(i);
+      s().pressNumber(g.solution[i]);
+    });
+    expect(s().game!.status).toBe('won');
+    expect(s().records[`${size}-easy`]?.wins).toBe(1);
+    expect(s().records['4-easy']).toBeUndefined();
+    s().newGame('hard');
+    expect(s().game!.spec.size).toBe(size);
+  });
+
+  it('v1 기록(난이도 키)은 4x4 기록으로 옮겨진다', async () => {
+    localStorage.setItem(
+      'ideun.sudoku',
+      JSON.stringify({ version: 1, state: { game: null, history: [], noteMode: false, records: { easy: { wins: 3, bestMs: 5000 } } } }),
+    );
+    await useSudoku.persist.rehydrate();
+    expect(s().records['4-easy']).toEqual({ wins: 3, bestMs: 5000 });
+    expect(s().size).toBe(4);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countSolutions, createRng, generatePuzzle, generateSolvedGrid, solveLogically, SPEC_4X4, unitsOf, type Difficulty } from '.';
+import { countSolutions, createRng, generatePuzzle, generateSolvedGrid, solveLogically, SPEC_4X4, SPEC_6X6, SPEC_8X8, unitsOf, type Difficulty } from '.';
 
 const spec = SPEC_4X4;
 
@@ -52,4 +52,26 @@ describe('generatePuzzle', () => {
   it('같은 시드는 같은 퍼즐', () => {
     expect(generatePuzzle('medium', { seed: 7 })).toEqual(generatePuzzle('medium', { seed: 7 }));
   });
+});
+
+describe.each([
+  [SPEC_6X6, { easy: [22, 24], medium: [16, 19], hard: [11, 14] }],
+  [SPEC_8X8, { easy: [40, 44], medium: [30, 35], hard: [22, 27] }],
+] as const)('generatePuzzle $size x $size', (spec, ranges) => {
+  for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+    it(`${difficulty}: 유일해, 힌트 개수 범위, 논리로 풀림`, () => {
+      for (let seed = 1; seed <= 15; seed++) {
+        const p = generatePuzzle(difficulty, { spec, seed });
+        const givens = p.givens.filter((v) => v !== 0).length;
+        expect(givens).toBeGreaterThanOrEqual(ranges[difficulty][0]);
+        expect(givens).toBeLessThanOrEqual(ranges[difficulty][1]);
+        expect(countSolutions(p.givens, spec)).toBe(1);
+        const techniques = difficulty === 'hard' ? undefined : (['nakedSingle'] as const);
+        expect(solveLogically(p.givens, spec, techniques && [...techniques]).solved).toBe(true);
+        for (const unit of unitsOf(spec)) {
+          expect(unit.map((i) => p.solution[i]).sort()).toEqual(Array.from({ length: spec.size }, (_, k) => k + 1));
+        }
+      }
+    });
+  }
 });

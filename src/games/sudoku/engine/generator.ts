@@ -38,9 +38,28 @@ const RULES_4X4: Record<Difficulty, DifficultyRule> = {
   hard: { minGivens: 4, maxGivens: 6, allowed: ['nakedSingle'], minBottlenecks: 2 },
 };
 
+/**
+ * 6x6(36칸): 최소 힌트는 보통 10~12개. 쉬움/중간은 nakedSingle만으로,
+ * 어려움은 hiddenSingle(줄/박스에서 그 숫자가 갈 곳이 하나뿐)까지 허용.
+ */
+const RULES_6X6: Record<Difficulty, DifficultyRule> = {
+  easy: { minGivens: 22, maxGivens: 24, allowed: ['nakedSingle'], minBottlenecks: 0 },
+  medium: { minGivens: 16, maxGivens: 19, allowed: ['nakedSingle'], minBottlenecks: 0 },
+  hard: { minGivens: 11, maxGivens: 14, allowed: ['nakedSingle', 'hiddenSingle'], minBottlenecks: 2 },
+};
+
+/** 8x8(64칸, 박스 2x4): 최소 힌트는 보통 18~20개. */
+const RULES_8X8: Record<Difficulty, DifficultyRule> = {
+  easy: { minGivens: 40, maxGivens: 44, allowed: ['nakedSingle'], minBottlenecks: 0 },
+  medium: { minGivens: 30, maxGivens: 35, allowed: ['nakedSingle'], minBottlenecks: 0 },
+  hard: { minGivens: 22, maxGivens: 27, allowed: ['nakedSingle', 'hiddenSingle'], minBottlenecks: 2 },
+};
+
 function rulesFor(spec: BoardSpec): Record<Difficulty, DifficultyRule> {
   if (spec.size === 4) return RULES_4X4;
-  // 다른 크기는 칸 수 비율로 근사 (추후 크기별 규칙을 추가)
+  if (spec.size === 6) return RULES_6X6;
+  if (spec.size === 8) return RULES_8X8;
+  // 그 밖의 크기는 칸 수 비율로 근사
   const cells = spec.size * spec.size;
   const scale = (ratio: number) => Math.round(cells * ratio);
   return {
@@ -90,9 +109,11 @@ export function generatePuzzle(difficulty: Difficulty, options: GenerateOptions 
     const target = rule.minGivens + Math.floor(rng() * span);
     const givens = dig(solution, spec, target, rng);
     if (matches(givens, spec, rule)) return { spec, difficulty, givens, solution };
-    // 조건을 완전히 만족하진 못해도 유일해 + 개수 범위는 맞는 퍼즐을 대비책으로 보관
+    // 조건을 완전히 만족하진 못해도 유일해 + 개수 범위 + 논리로 풀리는 퍼즐을 대비책으로 보관
     const count = givens.filter((v) => v !== 0).length;
-    if (!fallback && count >= rule.minGivens && count <= rule.maxGivens) fallback = { givens, solution };
+    if (!fallback && count >= rule.minGivens && count <= rule.maxGivens && solveLogically(givens, spec).solved) {
+      fallback = { givens, solution };
+    }
   }
   if (fallback) return { spec, difficulty, ...fallback };
   const solution = generateSolvedGrid(spec, rng);

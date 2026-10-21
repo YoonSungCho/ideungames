@@ -15,7 +15,7 @@
 .side, .tools, .padArea { width: min(100%, 600px); }
 .side { grid-area: side; display: grid; gap: clamp(6px, 1.4dvh, 14px); }
 .tools { grid-area: tools; }
-.padArea { grid-area: pad; }
+.padArea { grid-area: pad; container-type: inline-size; }
 .boardWrap {
   grid-area: board;
   /* 세로로 긴 화면(폴드 커버 등): 보드를 폭만큼 잡고 남는 공간은 위로 → 보드와 버튼이 손가락 가까이 */
@@ -192,7 +192,7 @@
 .toolLabel { font-size: 0.9rem; }
 
 /* ───────── 숫자 카드 ───────── */
-.pad { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: clamp(6px, 2vw, 12px); padding-top: 8px; }
+.pad { display: grid; grid-template-columns: repeat(var(--cols, var(--n)), 1fr); gap: clamp(6px, 2vw, 12px); padding-top: 8px; }
 .card {
   --c: var(--primary);
   position: relative; font: inherit; cursor: pointer;
@@ -212,6 +212,10 @@
 .c2 { --c: var(--num-2); }
 .c3 { --c: var(--num-3); }
 .c4 { --c: var(--num-4); }
+.c5 { --c: var(--num-5); }
+.c6 { --c: var(--num-6); }
+.c7 { --c: var(--num-7); }
+.c8 { --c: var(--num-8); }
 .cardNum { font-size: clamp(1.7rem, 5.5dvh, 3.2rem); line-height: 1; }
 .badge {
   position: absolute; top: -10px; right: -8px;
@@ -232,6 +236,15 @@
 .done { opacity: 0.4; filter: grayscale(0.6); cursor: default; box-shadow: none; }
 .done .badge { background: var(--success); }
 
+/* 6·8칸 카드: 카드 폭이 좁아지므로 배지를 줄이고, 좁은 화면의 8칸은 4개씩 2줄 */
+.pad6, .pad8 { gap: clamp(5px, 1.4vw, 10px); }
+.pad6 .badge, .pad8 .badge { min-width: 22px; height: 22px; padding: 0 5px; font-size: 0.8rem; top: -8px; right: -6px; border-width: 2px; }
+.pad6 .card, .pad8 .card { border-radius: 16px; }
+@container (max-width: 520px) {
+  .pad8 { --cols: 4; row-gap: 14px; }
+  .pad8 .card { height: clamp(48px, 7dvh, 76px); }
+}
+
 /* ───────── 난이도 선택 ───────── */
 .picker {
   flex: 1; min-height: 0; overflow-y: auto;
@@ -242,8 +255,9 @@
 .pickerIntro > svg { flex: none; width: clamp(64px, 12dvh, 96px); height: auto; }
 @media (min-aspect-ratio: 6/5) and (min-width: 560px) and (max-height: 600px) {
   .picker { max-width: 920px; grid-template-columns: 1fr 1fr; align-content: center; column-gap: 24px; }
-  .pickerIntro { grid-row: span 2; flex-direction: column; text-align: center; }
-  .resume, .diffList { grid-column: 2; }
+  .pickerIntro { grid-row: span 3; flex-direction: column; text-align: center; }
+  .resume, .sizeTabs, .diffList { grid-column: 2; }
+  .sizeTab { padding: 6px; }
   .diffCard { padding: 12px 18px; }
 }
 .pickerIntro { display: flex; align-items: center; gap: 12px; }
@@ -253,6 +267,22 @@
 }
 .bubbleLarge b { color: var(--primary); font-weight: normal; }
 .resume { width: 100%; }
+.resume small { font-size: 0.85em; opacity: 0.85; }
+.sizeTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.sizeTab {
+  font: inherit; cursor: pointer; color: var(--text);
+  display: grid; justify-items: center; gap: 2px;
+  padding: 10px 6px; border-radius: 18px;
+  border: 3px solid transparent; background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sizeTab:active { transform: translateY(2px); }
+.sizeTabOn { border-color: var(--primary); background: var(--selected-bg); }
+.sizeName { font-size: 1.35rem; }
+.sizeMeta { font-size: 0.85rem; color: var(--text-muted); }
+.chipSize { color: var(--text-muted); margin-right: 2px; }
 .diffList { display: grid; gap: 14px; width: 100%; }
 .diffCard {
   --d: var(--num-3);

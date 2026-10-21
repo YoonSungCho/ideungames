@@ -2,13 +2,16 @@ import { formatTime } from '@/shared/format';
 import { Button } from '@/shared/ui/Button';
 import { StarIcon } from '@/shared/ui/icons';
 import { Robot } from '@/shared/ui/Robot';
-import { useSudoku } from '../store';
-import { DIFFICULTIES, DIFFICULTY_LABEL, DIFFICULTY_STARS } from './labels';
+import { recordKey, useSudoku } from '../store';
+import { DIFFICULTIES, DIFFICULTY_LABEL, DIFFICULTY_STARS, SIZES, sizeLabel } from './labels';
 import styles from './Sudoku.module.css';
 
 export function DifficultyPicker({ onStart, onResume }: { onStart: () => void; onResume?: () => void }) {
   const newGame = useSudoku((s) => s.newGame);
   const records = useSudoku((s) => s.records);
+  const size = useSudoku((s) => s.size);
+  const setSize = useSudoku((s) => s.setSize);
+  const current = useSudoku((s) => s.game);
 
   return (
     <div className={styles.picker}>
@@ -17,25 +20,44 @@ export function DifficultyPicker({ onStart, onResume }: { onStart: () => void; o
         <p className={styles.bubbleLarge}>
           가로줄, 세로줄, 네모 칸 안에
           <br />
-          <b>1, 2, 3, 4</b>가 한 번씩만 들어가요!
+          {size === 4 ? (
+            <><b>1, 2, 3, 4</b>가 한 번씩만 들어가요!</>
+          ) : (
+            <><b>1부터 {size}까지</b> 한 번씩만 들어가요!</>
+          )}
         </p>
       </div>
 
-      {onResume && (
+      {onResume && current && (
         <Button size="lg" onClick={onResume} className={styles.resume}>
-          ▶ 하던 게임 이어하기
+          ▶ 하던 게임 이어하기 <small>({sizeLabel(current.spec.size)} {DIFFICULTY_LABEL[current.difficulty]})</small>
         </Button>
       )}
 
+      <div className={styles.sizeTabs} role="radiogroup" aria-label="보드 크기">
+        {SIZES.map((n) => (
+          <button
+            key={n}
+            role="radio"
+            aria-checked={size === n}
+            className={[styles.sizeTab, size === n && styles.sizeTabOn].filter(Boolean).join(' ')}
+            onClick={() => setSize(n)}
+          >
+            <span className={styles.sizeName}>{sizeLabel(n)}</span>
+            <span className={styles.sizeMeta}>숫자 1~{n}</span>
+          </button>
+        ))}
+      </div>
+
       <div className={styles.diffList}>
         {DIFFICULTIES.map((d) => {
-          const rec = records[d];
+          const rec = records[recordKey(size, d)];
           return (
             <button
               key={d}
               className={[styles.diffCard, styles[`d_${d}`]].join(' ')}
               onClick={() => {
-                newGame(d);
+                newGame(d, size);
                 onStart();
               }}
             >

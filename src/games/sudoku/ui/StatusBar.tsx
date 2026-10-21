@@ -1,16 +1,16 @@
 import { formatTime } from '@/shared/format';
 import { ClockIcon } from '@/shared/ui/icons';
-import { useSudoku } from '../store';
-import { DIFFICULTY_LABEL } from './labels';
+import { recordKey, useSudoku } from '../store';
+import { DIFFICULTY_LABEL, sizeLabel } from './labels';
 import styles from './Sudoku.module.css';
 
 export function StatusBar({ showMistakes, onNewGame }: { showMistakes: boolean; onNewGame: () => void }) {
   const game = useSudoku((s) => s.game)!;
-  const best = useSudoku((s) => s.records[game.difficulty]?.bestMs);
+  const best = useSudoku((s) => s.records[recordKey(game.spec.size, game.difficulty)]?.bestMs);
   return (
     <div className={styles.status}>
       <button className={[styles.diffChip, styles[`d_${game.difficulty}`]].join(' ')} onClick={onNewGame}>
-        {DIFFICULTY_LABEL[game.difficulty]} <span className={styles.chipHint}>▾ 새 게임</span>
+        <span className={styles.chipSize}>{sizeLabel(game.spec.size)}</span> {DIFFICULTY_LABEL[game.difficulty]} <span className={styles.chipHint}>▾ 새 게임</span>
       </button>
       <div className={styles.stats}>
         {showMistakes && (

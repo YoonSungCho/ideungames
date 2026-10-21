@@ -10,7 +10,7 @@ export function NumberPad() {
   const cellReady = selected !== null && isEditable(game, selected);
 
   return (
-    <div className={styles.pad} style={{ ['--n' as string]: game.spec.size }}>
+    <div className={[styles.pad, styles[`pad${game.spec.size}`]].filter(Boolean).join(' ')} style={{ ['--n' as string]: game.spec.size }}>
       {Array.from({ length: game.spec.size }, (_, k) => {
         const n = k + 1;
         const left = remainingOf(game, n);

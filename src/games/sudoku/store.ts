@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { playSound } from '@/shared/sound/sfx';
 import { storageKey } from '@/shared/storage';
-import { generatePuzzle, peersOf, unitsOf, type BoardSpec, type Difficulty, type Grid } from './engine';
+import { generatePuzzle, peersOf, SPECS, unitsOf, type BoardSize, type BoardSpec, type Difficulty, type Grid } from './engine';
 
 interface Snapshot {
   values: Grid;
@@ -33,6 +33,10 @@ export interface SudokuRecord {
   bestMs?: number;
 }
 
+/** 기록은 크기+난이도별로 따로 — 예: '6-easy' */
+export type RecordKey = `${BoardSize}-${Difficulty}`;
+export const recordKey = (size: number, difficulty: Difficulty) => `${size}-${difficulty}` as RecordKey;
+
 /** UI 피드백(애니메이션/로봇 대사)용 이벤트. key가 바뀌면 새 이벤트. */
 export interface SudokuEvent {
   kind: 'place' | 'wrong' | 'hint' | 'complete' | 'win' | 'start';
@@ -48,9 +52,13 @@ interface SudokuState {
   focus: number | null;
   noteMode: boolean;
   event: SudokuEvent | null;
-  records: Partial<Record<Difficulty, SudokuRecord>>;
+  /** 난이도 화면에서 고른 보드 크기 (다음 새 게임에 사용) */
+  size: BoardSize;
+  records: Partial<Record<RecordKey, SudokuRecord>>;
 
-  newGame: (difficulty: Difficulty) => void;
+  setSize: (size: BoardSize) => void;
+  /** size를 생략하면 현재 고른 크기로 */
+  newGame: (difficulty: Difficulty, size?: BoardSize) => void;
   selectCell: (index: number) => void;
   pressNumber: (n: number) => void;
   erase: () => void;
@@ -89,11 +97,12 @@ export const useSudoku = create<SudokuState>()(
 
         if (g.values.every((v, i) => v === g.solution[i])) {
           g.status = 'won';
-          const prev = get().records[g.difficulty] ?? { wins: 0 };
+          const key = recordKey(g.spec.size, g.difficulty);
+          const prev = get().records[key] ?? { wins: 0 };
           g.prevBestMs = prev.bestMs;
           const records = {
             ...get().records,
-            [g.difficulty]: {
+            [key]: {
               wins: prev.wins + 1,
               bestMs: prev.bestMs === undefined ? g.elapsedMs : Math.min(prev.bestMs, g.elapsedMs),
             },
@@ -148,12 +157,19 @@ export const useSudoku = create<SudokuState>()(
         focus: null,
         noteMode: false,
         event: null,
+        size: 4,
         records: {},
 
-        newGame: (difficulty) => {
-          const p = generatePuzzle(difficulty);
+        setSize: (size) => {
+          playSound('tap');
+          set({ size });
+        },
+
+        newGame: (difficulty, size = get().size) => {
+          const p = generatePuzzle(difficulty, { spec: SPECS[size] });
           const cells = p.givens.length;
           set({
+            size,
             game: {
               spec: p.spec,
               difficulty,
@@ -269,8 +285,18 @@ export const useSudoku = create<SudokuState>()(
     },
     {
       name: storageKey('sudoku'),
-      version: 1,
-      partialize: (s) => ({ game: s.game, history: s.history, noteMode: s.noteMode, records: s.records }),
+      version: 2,
+      partialize: (s) => ({ game: s.game, history: s.history, noteMode: s.noteMode, size: s.size, records: s.records }),
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<SudokuState> & { records?: Record<string, SudokuRecord> };
+        // v1: 4x4뿐이라 기록 키가 난이도('easy')였다 → '4-easy'
+        if (version < 2 && state.records) {
+          state.records = Object.fromEntries(
+            Object.entries(state.records).map(([k, v]) => [k.includes('-') ? k : `4-${k}`, v]),
+          ) as SudokuState['records'];
+        }
+        return state as SudokuState;
+      },
     },
   ),
 );
