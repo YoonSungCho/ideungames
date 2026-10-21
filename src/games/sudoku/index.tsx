@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
 import { useSudoku } from './store';
 import { Board } from './ui/Board';
@@ -64,8 +65,10 @@ export default function SudokuGame() {
   const [picking, setPicking] = useState(() => !game || game.status === 'won');
 
   const playing = !picking && game?.status === 'playing';
-  useTimer(playing);
-  useKeyboard(playing, maxHints);
+  const asking = useLeaveAsking();
+  useLeaveGuard(playing);
+  useTimer(playing && !asking);
+  useKeyboard(playing && !asking, maxHints);
 
   if (picking || !game) {
     return (

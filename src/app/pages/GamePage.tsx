@@ -3,6 +3,7 @@ import { Navigate, useParams } from 'react-router';
 import { getGame } from '@/games/registry';
 import { Robot } from '@/shared/ui/Robot';
 import { Header } from './Header';
+import { LeaveConfirm } from './LeaveConfirm';
 import styles from './pages.module.css';
 
 const lazyCache = new Map<string, LazyExoticComponent<ComponentType>>();
@@ -31,6 +32,7 @@ export function GamePage() {
       >
         <Game />
       </Suspense>
+      <LeaveConfirm />
     </div>
   );
 }

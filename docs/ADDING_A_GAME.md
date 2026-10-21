@@ -44,9 +44,10 @@ export default defineGame({
   - `playSound(name)` — 효과음 (설정의 소리 on/off 자동 반영). 새 소리는 `shared/sound/sfx.ts`에 추가
   - `<Robot mood=… />` 마스코트 띠봇, `<Confetti />`, `<Modal>`, `<Button>`, `icons.tsx`
   - `callName(name)` — "이든아", `formatTime(ms)`
+  - `useLeaveGuard(진행중)` — 진행 중엔 뒤로 가기 시 "게임을 그만할까?" 확인. 확인 창이 떠 있는 동안 `useLeaveAsking()`이 true이니 타이머 등을 멈춘다
   - `storageKey('<id>')` — localStorage 키 (`ideun.<id>`). 설정 화면의 "기록 지우기"가 이 접두사로 동작
 - 색/모서리/그림자는 `src/app/styles/tokens.css`의 CSS 변수를 사용한다.
-- `mode === 'easy'`일 때는 타이머·실수 같은 압박 요소를 숨기고 칭찬 위주로.
+- `mode === 'easy'`일 때는 실수 횟수 같은 압박 요소를 숨기고 칭찬 위주로.
 - 터치(태블릿/폰)·마우스·키보드 모두 고려. 버튼은 최소 44px.
 - 새 카테고리가 필요하면 `src/games/types.ts`의 `GameCategory`와 `CATEGORY_LABELS`에 추가.
 
