@@ -22,3 +22,7 @@
 }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
+@media (max-height: 600px) {
+  .backdrop { padding: 8px; }
+  .panel { width: min(640px, 100%); padding: 16px; max-height: calc(100dvh - 16px); }
+}
