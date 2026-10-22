@@ -68,6 +68,8 @@ interface SudokuState {
   noteMode: boolean;
   /** 잠깐 멈춤 (보드 가림, 시간 멈춤). 저장하지 않음 → 다시 열면 멈춘 상태로 시작 */
   paused: boolean;
+  /** "그만하기"로 나갔음 → 다시 들어오면 메뉴(이어하기/새 게임)부터 */
+  menuOnReturn: boolean;
   event: SudokuEvent | null;
   /** 난이도 화면에서 고른 보드 크기 (다음 새 게임에 사용) */
   size: BoardSize;
@@ -189,6 +191,7 @@ export const useSudoku = create<SudokuState>()(
         noteMode: false,
         // 앱을 새로 열면 진행 중인 게임은 멈춘 상태로 시작
         paused: true,
+        menuOnReturn: false,
         event: null,
         size: 4,
         records: {},

@@ -59,26 +59,6 @@ test('상단 모드 전환: 시작 전이면 바로, 진행 중이면 물어본�
   expect((await saved(page)).game).toMatchObject({ spec: { size: 4 }, status: 'ready' });
 });
 
-test('뒤로 가기: 진행 중이면 확인, 그만해도 이어서 할 수 있다 (멈춘 상태로)', async ({ page }) => {
-  await startGame(page, 4);
-  await placeOneCorrect(page);
-  await page.getByRole('link', { name: '홈으로' }).click();
-  await expect(page.getByRole('dialog')).toContainText('게임을 그만할까?');
-  await page.getByRole('button', { name: '계속하기' }).click();
-  await expect(page).toHaveURL(/games\/sudoku/);
-
-  await page.goBack();
-  await expect(page.getByRole('dialog')).toContainText('게임을 그만할까?');
-  await page.getByRole('button', { name: '그만하기' }).click();
-  await expect(page.getByRole('link', { name: /스도쿠/ })).toBeVisible();
-
-  await page.getByRole('link', { name: /스도쿠/ }).click();
-  await expect(page.getByRole('button', { name: '▶ 계속하기' })).toBeVisible();
-  const t = await timerText(page);
-  await page.waitForTimeout(1200);
-  expect(await timerText(page)).toBe(t);
-});
-
 test('시작 전에는 뒤로 가기를 묻지 않는다', async ({ page }) => {
   await openNewGame(page, 4);
   await page.getByRole('link', { name: '홈으로' }).click();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
@@ -81,11 +81,26 @@ function Play() {
   const paused = useSudoku((s) => s.paused);
   const challenge = useSettings((s) => s.mode) === 'challenge';
   const maxHints = challenge ? CHALLENGE_HINTS : Infinity;
-  const [picking, setPicking] = useState(() => !game || game.status === 'won');
+  // 그만하기로 나갔다 오면 메뉴부터 (이어하기 버튼으로 바로 이어서)
+  const [picking, setPicking] = useState(() => !game || game.status === 'won' || useSudoku.getState().menuOnReturn);
+  // 메뉴(난이도 화면)나 시작 전 화면에서 떠났다면 돌아올 때도 메뉴부터
+  const leftFromMenu = useRef(false);
+  leftFromMenu.current = picking || game?.status === 'ready';
+  useEffect(() => {
+    useSudoku.setState({ menuOnReturn: false });
+    return () => {
+      if (leftFromMenu.current) useSudoku.setState({ menuOnReturn: true });
+    };
+  }, []);
+  const resume = useCallback(() => {
+    setPicking(false);
+    useSudoku.getState().start();
+  }, []);
+  const markQuit = useCallback(() => useSudoku.setState({ menuOnReturn: true }), []);
 
   const live = !picking && game?.status === 'playing' && !paused;
   const asking = useLeaveAsking();
-  useLeaveGuard(!picking && hasProgress(game));
+  useLeaveGuard(!picking && hasProgress(game), markQuit);
   useAutoPause(picking);
   useTimer(live && !asking);
   useKeyboard(live && !asking, maxHints);
@@ -94,7 +109,7 @@ function Play() {
     return (
       <DifficultyPicker
         onStart={() => setPicking(false)}
-        onResume={hasProgress(game) ? () => setPicking(false) : undefined}
+        onResume={hasProgress(game) ? resume : undefined}
       />
     );
   }

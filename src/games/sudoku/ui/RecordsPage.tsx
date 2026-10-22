@@ -140,6 +140,8 @@ export function RecordsPage() {
 
   const play = (d: Difficulty) => {
     newGame(d, size);
+    // 새 판은 메뉴를 거치지 않고 바로 "시작하기" 화면으로
+    useSudoku.setState({ menuOnReturn: false });
     navigate('..');
   };
 

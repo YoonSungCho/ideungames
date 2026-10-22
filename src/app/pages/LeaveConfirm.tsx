@@ -27,7 +27,10 @@ export function LeaveConfirm({ gamePath }: { gamePath: string }) {
       cancelLabel="계속하기"
       confirmLabel="그만하기"
       onCancel={() => blocker.reset?.()}
-      onConfirm={() => blocker.proceed?.()}
+      onConfirm={() => {
+        useLeaveGuardStore.getState().onQuit?.();
+        blocker.proceed?.();
+      }}
     />
   );
 }

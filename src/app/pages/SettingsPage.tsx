@@ -63,7 +63,7 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      <Header title="설정" back right={<span className={styles.iconSpacer} />} />
+      <Header title="설정" back backToPrevious right={<span className={styles.iconSpacer} />} />
       <main className={styles.settings}>
         <section>
           <h2>플레이어 이름</h2>
