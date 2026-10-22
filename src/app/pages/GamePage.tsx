@@ -9,7 +9,8 @@ import styles from './pages.module.css';
 const lazyCache = new Map<string, LazyExoticComponent<ComponentType>>();
 
 export function GamePage() {
-  const { id = '' } = useParams();
+  const { id = '', '*': rest } = useParams();
+  const gamePath = `/games/${id}`;
   const game = getGame(id);
   const Game = useMemo(() => {
     if (!game) return null;
@@ -21,7 +22,7 @@ export function GamePage() {
 
   return (
     <div className={styles.gamePage}>
-      <Header title={game.title} back />
+      <Header title={game.title} back backTo={rest ? gamePath : '/'} />
       <Suspense
         fallback={
           <div className={styles.loading}>
@@ -32,7 +33,7 @@ export function GamePage() {
       >
         <Game />
       </Suspense>
-      <LeaveConfirm />
+      <LeaveConfirm gamePath={gamePath} />
     </div>
   );
 }

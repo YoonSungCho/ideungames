@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
-import { useSudoku } from './store';
+import { hasProgress, useSudoku } from './store';
 import { Board } from './ui/Board';
 import { Coach } from './ui/Coach';
 import { Controls } from './ui/Controls';
 import { DifficultyPicker } from './ui/DifficultyPicker';
 import { NumberPad } from './ui/NumberPad';
+import { RecordsPage } from './ui/RecordsPage';
+import { StartOverlay } from './ui/StartOverlay';
 import { StatusBar } from './ui/StatusBar';
 import { WinModal } from './ui/WinModal';
 import styles from './ui/Sudoku.module.css';
@@ -58,35 +61,54 @@ function useKeyboard(enabled: boolean, maxHints: number) {
   }, [enabled, maxHints]);
 }
 
-export default function SudokuGame() {
+/** 화면을 떠나거나 앱을 내리면 자동으로 멈춤 → 돌아오면 "계속하기"로 다시 시작 */
+function useAutoPause(picking: boolean) {
+  useEffect(() => {
+    const onVisibility = () => document.visibilityState === 'hidden' && useSudoku.getState().pause();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      useSudoku.getState().pause();
+    };
+  }, []);
+  useEffect(() => {
+    if (picking) useSudoku.getState().pause();
+  }, [picking]);
+}
+
+function Play() {
   const game = useSudoku((s) => s.game);
+  const paused = useSudoku((s) => s.paused);
   const challenge = useSettings((s) => s.mode) === 'challenge';
   const maxHints = challenge ? CHALLENGE_HINTS : Infinity;
   const [picking, setPicking] = useState(() => !game || game.status === 'won');
 
-  const playing = !picking && game?.status === 'playing';
+  const live = !picking && game?.status === 'playing' && !paused;
   const asking = useLeaveAsking();
-  useLeaveGuard(playing);
-  useTimer(playing && !asking);
-  useKeyboard(playing && !asking, maxHints);
+  useLeaveGuard(!picking && hasProgress(game));
+  useAutoPause(picking);
+  useTimer(live && !asking);
+  useKeyboard(live && !asking, maxHints);
 
   if (picking || !game) {
     return (
       <DifficultyPicker
         onStart={() => setPicking(false)}
-        onResume={game?.status === 'playing' ? () => setPicking(false) : undefined}
+        onResume={hasProgress(game) ? () => setPicking(false) : undefined}
       />
     );
   }
 
+  const veiled = game.status === 'ready' || (game.status === 'playing' && paused);
   return (
-    <div className={styles.play}>
+    <div className={[styles.play, veiled && styles.veiled].filter(Boolean).join(' ')}>
       <div className={styles.side}>
         <StatusBar showMistakes={challenge} onNewGame={() => setPicking(true)} />
         <Coach />
       </div>
       <div className={styles.boardWrap}>
         <Board />
+        {veiled && <StartOverlay />}
       </div>
       <div className={styles.tools}>
         <Controls maxHints={maxHints} />
@@ -96,5 +118,15 @@ export default function SudokuGame() {
       </div>
       {game.status === 'won' && <WinModal onPickDifficulty={() => setPicking(true)} />}
     </div>
+  );
+}
+
+export default function SudokuGame() {
+  return (
+    <Routes>
+      <Route index element={<Play />} />
+      <Route path="records" element={<RecordsPage />} />
+      <Route path="*" element={<Navigate to="." replace />} />
+    </Routes>
   );
 }

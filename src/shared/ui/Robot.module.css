@@ -1,59 +1,70 @@
-.robot {
-  --robot-body: #ffffff;
-  --robot-dark: #3b3567;
-  --robot-screen: #2b2a4c;
-  --robot-eye: #6ee7f9;
-  --robot-accent: #ffd166;
-  --robot-cheek: #ff8fab;
-  overflow: visible;
-  animation: bob 2.6s ease-in-out infinite;
-  transform-origin: 50% 100%;
-}
+.robot { overflow: visible; }
+.robot * { transform-box: view-box; }
 
-.antenna {
-  animation: blink-glow 1.8s ease-in-out infinite;
-}
+.float { animation: hover 3s ease-in-out infinite; }
+.shadow { transform-origin: 100px 213px; animation: shadow 3s ease-in-out infinite; }
 
-.eyes {
-  animation: blink 4.5s infinite;
-  transform-origin: 50% 92px;
-}
+.blink { transform-origin: 100px 87px; animation: blink 4.8s infinite; }
+.antenna { animation: glow 2s ease-in-out infinite; }
+.led { animation: led 1.8s ease-in-out infinite; }
+.led:nth-of-type(2) { animation-delay: 0.3s; }
+.led:nth-of-type(3) { animation-delay: 0.6s; }
 
-.cheer {
-  animation: jump 0.7s ease-in-out infinite;
-}
+.happy .float { animation-duration: 1.5s; }
+.happy .shadow { animation-duration: 1.5s; }
+.happy .armR { transform-origin: 142px 160px; animation: wave 0.9s ease-in-out infinite; }
 
-.happy {
-  animation: bob 1.4s ease-in-out infinite;
-}
+.cheer .float { animation: jump 0.7s ease-in-out infinite; }
+.cheer .shadow { animation: shadow 0.7s ease-in-out infinite; }
+.sparkles { transform-origin: 100px 60px; animation: twinkle 0.7s ease-in-out infinite alternate; }
 
-.oops {
-  animation: shake 0.4s ease-in-out 2;
-}
+.think .float { transform-origin: 100px 200px; animation: ponder 3s ease-in-out infinite; }
 
-@keyframes bob {
+.oops .float { transform-origin: 100px 200px; animation: shake 0.45s ease-in-out 2; }
+
+@keyframes hover {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+@keyframes shadow {
+  0%, 100% { transform: scale(1); opacity: 0.13; }
+  50% { transform: scale(0.82); opacity: 0.08; }
+}
 @keyframes jump {
   0%, 100% { transform: translateY(0) scale(1, 1); }
-  40% { transform: translateY(-16px) scale(0.97, 1.03); }
-  80% { transform: translateY(0) scale(1.04, 0.96); }
+  40% { transform: translateY(-16px) scale(0.98, 1.02); }
+  80% { transform: translateY(0) scale(1.03, 0.97); }
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-28deg); }
+}
+@keyframes ponder {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(3deg) translateY(-3px); }
 }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px) rotate(-3deg); }
-  75% { transform: translateX(5px) rotate(3deg); }
+  25% { transform: translateX(-5px) rotate(-4deg); }
+  75% { transform: translateX(5px) rotate(4deg); }
 }
 @keyframes blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.1); }
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
 }
-@keyframes blink-glow {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.25) drop-shadow(0 0 6px #ffd166); }
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes led {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes twinkle {
+  from { transform: scale(0.85); opacity: 0.6; }
+  to { transform: scale(1.1); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .robot, .eyes, .antenna { animation: none; }
+  .float, .shadow, .blink, .antenna, .led, .armR, .sparkles { animation: none !important; }
 }

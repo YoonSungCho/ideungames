@@ -1,0 +1,101 @@
+.page {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: grid; gap: 16px; align-content: start;
+  width: 100%; max-width: 1100px; margin: 0 auto;
+  padding: 8px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+/* ───────── 메달 진열장 ───────── */
+.shelf {
+  border-radius: var(--radius-xl);
+  padding: 14px 18px 16px;
+  background: linear-gradient(135deg, #3b2f8f, #6b5ce7 60%, #8f7bff);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+.shelfTitle { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.shelfTitle h2 { margin: 0; font-size: 1.35rem; font-weight: normal; }
+.shelfTitle span { opacity: 0.85; font-size: 0.95rem; }
+.shelfTitle b { font-weight: normal; color: #a5f3fc; font-size: 1.15rem; }
+.shelfRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.shelfItem {
+  display: grid; justify-items: center; gap: 0;
+  padding: 8px 4px; border-radius: 16px;
+  background: rgb(255 255 255 / 0.14);
+}
+.shelfItem b { font-weight: normal; font-size: 1.3rem; line-height: 1.1; }
+.shelfItem small { font-size: 0.8rem; opacity: 0.8; }
+.shelfIcon { font-size: 1.9rem; line-height: 1.2; }
+.shelfEmpty .shelfIcon { filter: grayscale(1); opacity: 0.45; }
+
+/* ───────── 크기 탭 ───────── */
+.tabs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 4px; border-radius: var(--radius-pill);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+  width: min(100%, 420px); justify-self: center;
+}
+.tabs button {
+  font: inherit; font-size: 1.1rem; border: none; cursor: pointer;
+  padding: 8px; border-radius: var(--radius-pill);
+  background: transparent; color: var(--text-muted);
+  -webkit-tap-highlight-color: transparent;
+}
+.tabs .tabOn { background: var(--primary); color: var(--on-primary); }
+
+/* ───────── 난이도별 카드 ───────── */
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); align-items: start; }
+.card {
+  --d: var(--num-3);
+  display: grid; gap: 12px;
+  padding: 14px 16px 16px; border-radius: var(--radius-xl);
+  background: var(--surface); box-shadow: 0 5px 0 color-mix(in srgb, var(--d) 35%, #fff), var(--shadow-sm);
+}
+.d_easy { --d: var(--num-3); }
+.d_medium { --d: var(--num-2); }
+.d_hard { --d: var(--num-1); }
+.cardHead { display: flex; align-items: center; gap: 8px; }
+.cardHead h3 { margin: 0; font-size: 1.35rem; font-weight: normal; }
+.stars { display: flex; color: var(--d); }
+.wins { margin-left: auto; color: var(--text-muted); font-size: 0.9rem; }
+
+.best { display: flex; align-items: center; gap: 12px; }
+.bestMedal { font-size: 2.6rem; line-height: 1; filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.15)); }
+.best div { display: grid; }
+.best small { color: var(--text-muted); font-size: 0.85rem; }
+.best b { font-weight: normal; font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.play {
+  margin-left: auto; font: inherit; font-size: 1rem; cursor: pointer;
+  border: none; border-radius: var(--radius-pill);
+  padding: 10px 16px; background: var(--d); color: #fff;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--d) 60%, #000);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.play:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--d) 60%, #000); }
+
+.goal { display: grid; gap: 6px; }
+.goal p, .goalDone { margin: 0; font-size: 0.95rem; color: var(--text); }
+.goal b { font-weight: normal; color: var(--danger); }
+.bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--d), color-mix(in srgb, var(--d) 60%, #fff)); }
+.goalDone { color: var(--primary); }
+
+.empty { display: flex; align-items: center; gap: 12px; color: var(--text-muted); }
+.empty p { margin: 0; }
+
+.runs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.runs li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 12px; background: var(--surface-2);
+}
+.rank {
+  display: grid; place-items: center; flex: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface); color: var(--text-muted); font-size: 0.85rem;
+}
+.runTop { background: #fff4d6 !important; }
+.runTop .rank { background: var(--accent); color: var(--text); }
+.runTime { font-weight: normal; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.runMeta { margin-left: auto; font-size: 0.85rem; color: var(--text-muted); }
+
+.legend { margin: 0; text-align: center; font-size: 0.9rem; color: var(--text-muted); }

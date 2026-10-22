@@ -23,15 +23,30 @@ export interface SudokuGame {
   mistakes: number;
   hintsUsed: number;
   elapsedMs: number;
-  status: 'playing' | 'won';
+  /** ready: 시작하기 전 (보드 가림, 시간 0) */
+  status: 'ready' | 'playing' | 'won';
   /** 이번 판 시작 전의 최고 기록 (클리어 시 저장, 신기록 판정용) */
   prevBestMs?: number;
+  /** 클리어 시 이번 기록의 순위 (1부터, TOP 목록 밖이면 없음) */
+  rank?: number;
+}
+
+export interface SudokuRun {
+  ms: number;
+  /** 클리어 시각 (epoch ms). 옛 기록은 0 */
+  at: number;
+  mistakes: number;
+  hints: number;
 }
 
 export interface SudokuRecord {
   wins: number;
   bestMs?: number;
+  /** 빠른 순 TOP 기록 */
+  runs?: SudokuRun[];
 }
+
+export const TOP_RUNS = 10;
 
 /** 기록은 크기+난이도별로 따로 — 예: '6-easy' */
 export type RecordKey = `${BoardSize}-${Difficulty}`;
@@ -51,6 +66,8 @@ interface SudokuState {
   /** 하이라이트 중인 숫자 — 이 숫자가 있는 행/열/박스를 보드에 표시 */
   focus: number | null;
   noteMode: boolean;
+  /** 잠깐 멈춤 (보드 가림, 시간 멈춤). 저장하지 않음 → 다시 열면 멈춘 상태로 시작 */
+  paused: boolean;
   event: SudokuEvent | null;
   /** 난이도 화면에서 고른 보드 크기 (다음 새 게임에 사용) */
   size: BoardSize;
@@ -59,6 +76,9 @@ interface SudokuState {
   setSize: (size: BoardSize) => void;
   /** size를 생략하면 현재 고른 크기로 */
   newGame: (difficulty: Difficulty, size?: BoardSize) => void;
+  /** 시작하기 / 계속하기 */
+  start: () => void;
+  pause: () => void;
   selectCell: (index: number) => void;
   pressNumber: (n: number) => void;
   erase: () => void;
@@ -74,6 +94,12 @@ interface SudokuState {
 const HISTORY_LIMIT = 200;
 let eventKey = 0;
 const makeEvent = (kind: SudokuEvent['kind'], cells: number[] = []): SudokuEvent => ({ kind, cells, key: ++eventKey });
+
+/** 시간이 흐르고 입력을 받는 상태 */
+const isLive = (s: Pick<SudokuState, 'game' | 'paused'>) => s.game?.status === 'playing' && !s.paused;
+
+/** 취소하면 아까운 진행 중인 게임인가 (시작했고, 아직 안 끝남) */
+export const hasProgress = (g: SudokuGame | null) => g?.status === 'playing';
 
 export const isEditable = (g: SudokuGame, i: number) => g.givens[i] === 0 && g.values[i] !== g.solution[i];
 
@@ -100,11 +126,16 @@ export const useSudoku = create<SudokuState>()(
           const key = recordKey(g.spec.size, g.difficulty);
           const prev = get().records[key] ?? { wins: 0 };
           g.prevBestMs = prev.bestMs;
+          const run: SudokuRun = { ms: g.elapsedMs, at: Date.now(), mistakes: g.mistakes, hints: g.hintsUsed };
+          const runs = [...(prev.runs ?? []), run].sort((a, b) => a.ms - b.ms).slice(0, TOP_RUNS);
+          const rank = runs.indexOf(run);
+          g.rank = rank === -1 ? undefined : rank + 1;
           const records = {
             ...get().records,
             [key]: {
               wins: prev.wins + 1,
               bestMs: prev.bestMs === undefined ? g.elapsedMs : Math.min(prev.bestMs, g.elapsedMs),
+              runs,
             },
           };
           playSound('win');
@@ -124,7 +155,7 @@ export const useSudoku = create<SudokuState>()(
 
       const placeAt = (index: number, n: number) => {
         const { game, noteMode } = get();
-        if (!game || game.status !== 'playing' || !isEditable(game, index)) return;
+        if (!game || !isLive(get()) || !isEditable(game, index)) return;
         const g: SudokuGame = { ...game, values: game.values.slice(), notes: game.notes.slice() };
 
         if (noteMode) {
@@ -156,6 +187,8 @@ export const useSudoku = create<SudokuState>()(
         selected: null,
         focus: null,
         noteMode: false,
+        // 앱을 새로 열면 진행 중인 게임은 멈춘 상태로 시작
+        paused: true,
         event: null,
         size: 4,
         records: {},
@@ -181,20 +214,33 @@ export const useSudoku = create<SudokuState>()(
               mistakes: 0,
               hintsUsed: 0,
               elapsedMs: 0,
-              status: 'playing',
+              status: 'ready',
             },
             history: [],
             selected: null,
             focus: null,
             noteMode: false,
-            event: makeEvent('start'),
+            paused: false,
+            event: null,
           });
+        },
+
+        start: () => {
+          const { game } = get();
+          if (!game || game.status === 'won') return;
+          playSound('select');
+          const first = game.status === 'ready';
+          set({ game: first ? { ...game, status: 'playing' } : game, paused: false, event: first ? makeEvent('start') : get().event });
+        },
+
+        pause: () => {
+          if (get().game?.status === 'playing' && !get().paused) set({ paused: true });
         },
 
         // 칸을 누르면 선택만 한다. 숫자가 있는 칸이면 그 숫자를 하이라이트.
         selectCell: (index) => {
           const { game } = get();
-          if (!game) return;
+          if (!game || !isLive(get())) return;
           playSound('select');
           set({ selected: index, focus: game.values[index] || null });
         },
@@ -202,7 +248,7 @@ export const useSudoku = create<SudokuState>()(
         // 숫자 카드: 고른 빈칸에 입력 + 그 숫자 하이라이트. 고른 빈칸이 없으면 하이라이트만 켜고/끈다.
         pressNumber: (n) => {
           const { game, selected, focus, noteMode } = get();
-          if (!game || game.status !== 'playing') return;
+          if (!game || !isLive(get())) return;
           const canPlace = noteMode || remainingOf(game, n) > 0;
           if (canPlace && selected !== null && isEditable(game, selected)) {
             placeAt(selected, n);
@@ -215,7 +261,7 @@ export const useSudoku = create<SudokuState>()(
 
         erase: () => {
           const { game, selected } = get();
-          if (!game || selected === null || !isEditable(game, selected)) return;
+          if (!game || !isLive(get()) || selected === null || !isEditable(game, selected)) return;
           if (game.values[selected] === 0 && game.notes[selected] === 0) return;
           const history = pushHistory(game);
           const values = game.values.slice();
@@ -228,20 +274,21 @@ export const useSudoku = create<SudokuState>()(
 
         undo: () => {
           const { game, history } = get();
-          if (!game || game.status !== 'playing' || history.length === 0) return;
+          if (!game || !isLive(get()) || history.length === 0) return;
           const prev = history[history.length - 1];
           playSound('erase');
           set({ game: { ...game, values: prev.values, notes: prev.notes }, history: history.slice(0, -1) });
         },
 
         toggleNoteMode: () => {
+          if (!isLive(get())) return;
           playSound('tap');
           set((s) => ({ noteMode: !s.noteMode }));
         },
 
         hint: (maxHints) => {
           const { game, selected } = get();
-          if (!game || game.status !== 'playing' || game.hintsUsed >= maxHints) return;
+          if (!game || !isLive(get()) || game.hintsUsed >= maxHints) return;
           let target = selected !== null && isEditable(game, selected) ? selected : -1;
           if (target === -1) {
             const open = game.values.map((_, i) => i).filter((i) => isEditable(game, i));
@@ -263,7 +310,7 @@ export const useSudoku = create<SudokuState>()(
 
         moveSelection: (dRow, dCol) => {
           const { game, selected } = get();
-          if (!game) return;
+          if (!game || !isLive(get())) return;
           const size = game.spec.size;
           const next =
             selected === null
@@ -274,18 +321,18 @@ export const useSudoku = create<SudokuState>()(
 
         tick: (ms) => {
           const { game } = get();
-          if (!game || game.status !== 'playing') return;
+          if (!game || !isLive(get())) return;
           set({ game: { ...game, elapsedMs: game.elapsedMs + ms } });
         },
 
-        quit: () => set({ game: null, history: [], selected: null, focus: null, event: null }),
+        quit: () => set({ game: null, history: [], selected: null, focus: null, event: null, paused: false }),
 
         resetRecords: () => set({ records: {} }),
       };
     },
     {
       name: storageKey('sudoku'),
-      version: 2,
+      version: 3,
       partialize: (s) => ({ game: s.game, history: s.history, noteMode: s.noteMode, size: s.size, records: s.records }),
       migrate: (persisted, version) => {
         const state = persisted as Partial<SudokuState> & { records?: Record<string, SudokuRecord> };
@@ -294,6 +341,12 @@ export const useSudoku = create<SudokuState>()(
           state.records = Object.fromEntries(
             Object.entries(state.records).map(([k, v]) => [k.includes('-') ? k : `4-${k}`, v]),
           ) as SudokuState['records'];
+        }
+        // v3: TOP 기록 목록 — 기존 최고 기록을 첫 기록으로
+        if (version < 3 && state.records) {
+          for (const rec of Object.values(state.records) as SudokuRecord[]) {
+            if (!rec.runs && rec.bestMs !== undefined) rec.runs = [{ ms: rec.bestMs, at: 0, mistakes: 0, hints: 0 }];
+          }
         }
         return state as SudokuState;
       },

@@ -18,7 +18,7 @@ const router = createHashRouter([
     ),
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/games/:id', element: <GamePage /> },
+      { path: '/games/:id/*', element: <GamePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '*', element: <HomePage /> },
     ],

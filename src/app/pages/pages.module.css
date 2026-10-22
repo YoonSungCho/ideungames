@@ -111,11 +111,11 @@
 .infoRow small { color: var(--text-muted); }
 .infoStatus { margin: 0; text-align: center; color: var(--text-muted); }
 
-.leave { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.leave h2 { margin: 0; font-size: 1.5rem; font-weight: normal; }
-.leave p { margin: 0; color: var(--text-muted); }
-.leaveActions { display: grid; gap: 10px; width: 100%; margin-top: 8px; }
-@media (max-height: 600px) {
-  .leave { gap: 4px; }
-  .leaveActions { grid-template-columns: 1fr 1fr; }
+/* 폰 가로: 홈 카드가 한 화면에 들어오도록 낮게 */
+@media (min-aspect-ratio: 1/1) and (max-height: 600px) {
+  .hero { padding-bottom: 10px; }
+  .hero > svg { width: 64px; }
+  .heroText h1 { font-size: 1.9rem; }
+  .thumb { aspect-ratio: 2; padding: 6%; }
+  .cardBody { padding: 8px 12px 10px; }
 }

@@ -48,35 +48,76 @@
   .padArea { justify-self: center; width: min(100%, 680px); }
 }
 
-/* 세로 공간이 좁은 화면 (폰 가로, 작은 폰): 장식 요소를 줄인다 */
-@media (max-height: 600px) {
-  .coach { min-height: 0; }
-  .coach svg { width: 40px; }
-  .bubble { font-size: 0.95rem; padding: 6px 12px; }
-  .toolLabel { display: none; }
-  .toolIcon { width: 42px; height: 42px; }
-  .toolIcon svg { width: 22px; height: 22px; }
-  .diffChip { padding: 5px 12px; font-size: 0.95rem; }
-}
 
 /* ───────── 상단 상태 ───────── */
-.status { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.statusWrap { display: grid; gap: 6px; }
+.status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sizeSwitch {
+  display: inline-flex; gap: 2px; padding: 3px;
+  border-radius: var(--radius-pill); background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.sizeSwitch button {
+  font: inherit; font-size: 0.95rem; border: none; cursor: pointer;
+  padding: 6px 10px; min-height: 34px; border-radius: var(--radius-pill);
+  background: transparent; color: var(--text-muted);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sizeSwitch .sizeOn { background: var(--primary); color: var(--on-primary); }
 .diffChip {
   font: inherit; border: none; cursor: pointer;
-  padding: 8px 14px; border-radius: var(--radius-pill);
-  font-size: 1.05rem; color: var(--text);
+  padding: 7px 14px; min-height: 40px; border-radius: var(--radius-pill);
+  font-size: 1rem; color: var(--text);
   background: var(--surface); box-shadow: var(--shadow-sm);
 }
-.chipHint { font-size: 0.8rem; color: var(--text-muted); margin-left: 4px; }
-.stats { display: flex; gap: 8px; }
+.chipHint { font-size: 0.8rem; color: var(--text-muted); margin-left: 2px; }
+.mistakes { margin-left: auto; }
 .stat {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 6px 12px; border-radius: var(--radius-pill);
+  padding: 4px 6px 4px 12px; min-height: 40px; border-radius: var(--radius-pill);
   background: var(--surface); box-shadow: var(--shadow-sm);
   color: var(--text-muted); font-size: 0.95rem;
 }
+.stat:not(:has(button)) { padding-right: 12px; }
 .stat b { color: var(--text); font-weight: normal; font-variant-numeric: tabular-nums; }
-.bestInline { margin-left: 6px; color: var(--hint); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.time { min-width: 2.6em; font-size: 1.1rem; }
+.pauseBtn {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-left: 2px;
+  border: none; border-radius: 50%; cursor: pointer;
+  background: var(--surface-2); color: var(--primary);
+  -webkit-tap-highlight-color: transparent;
+}
+.pace { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.92rem; color: var(--text-muted); }
+.paceInfo { display: flex; flex-wrap: wrap; gap: 2px 12px; min-width: 0; }
+.paceInfo > span { white-space: nowrap; }
+.pace b { font-weight: normal; font-variant-numeric: tabular-nums; color: var(--text); }
+.pace_diamond b, b.pace_diamond { color: #0891b2; }
+.pace_gold b, b.pace_gold { color: #c27c00; }
+.pace_silver b, b.pace_silver { color: #64748b; }
+.pace_bronze b, b.pace_bronze { color: #b45309; }
+.paceBest { white-space: nowrap; }
+.paceBeating b { color: var(--success); }
+
+/* ───────── 시작 / 멈춤 ───────── */
+.boardWrap { position: relative; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; padding: 12px; }
+.overlayCard {
+  display: grid; justify-items: center; gap: 10px;
+  max-width: 100%; padding: 20px 24px; border-radius: var(--radius-xl);
+  background: var(--surface); box-shadow: var(--shadow-lg); text-align: center;
+  animation: bubble-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.overlayTitle { margin: 0; font-size: 1.3rem; color: var(--text); }
+.overlayHint { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+.startBtn { position: relative; font-size: 1.5rem; padding: 16px 40px; }
+/* 버튼 자체는 가만히, 바깥 링만 퍼져 나가며 "눌러 줘" 신호 */
+.startBtn::after {
+  content: ''; position: absolute; inset: -4px; border-radius: inherit;
+  border: 3px solid var(--primary); pointer-events: none;
+  animation: ring 1.6s ease-out infinite;
+}
+@keyframes ring { from { opacity: 0.7; transform: scale(1); } to { opacity: 0; transform: scale(1.18, 1.35); } }
+.veiled .board { filter: blur(9px) saturate(0.6); opacity: 0.55; pointer-events: none; }
+.veiled .tools, .veiled .padArea { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
 
 /* ───────── 로봇 코치 ───────── */
 .coach { display: flex; align-items: center; gap: 8px; min-height: 64px; }
@@ -237,6 +278,7 @@
 .done .badge { background: var(--success); }
 
 /* 6·8칸 카드: 카드 폭이 좁아지므로 배지를 줄이고, 좁은 화면의 8칸은 4개씩 2줄 */
+.pad4 { --cols: 4; }
 .pad6, .pad8 { gap: clamp(5px, 1.4vw, 10px); }
 .pad6 .badge, .pad8 .badge { min-width: 22px; height: 22px; padding: 0 5px; font-size: 0.8rem; top: -8px; right: -6px; border-width: 2px; }
 .pad6 .card, .pad8 .card { border-radius: 16px; }
@@ -253,12 +295,24 @@
   padding: 12px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 .pickerIntro > svg { flex: none; width: clamp(64px, 12dvh, 96px); height: auto; }
+/* 낮은 가로 화면: 왼쪽(소개·크기·기록) | 오른쪽(이어하기·난이도). 넘치면 위가 잘리지 않게 safe center */
 @media (min-aspect-ratio: 6/5) and (min-width: 560px) and (max-height: 600px) {
-  .picker { max-width: 920px; grid-template-columns: 1fr 1fr; align-content: center; column-gap: 24px; }
-  .pickerIntro { grid-row: span 3; flex-direction: column; text-align: center; }
-  .resume, .sizeTabs, .diffList { grid-column: 2; }
+  .picker {
+    max-width: 960px; grid-template-columns: 1fr 1fr; column-gap: 24px; row-gap: 12px;
+    grid-template-areas: 'intro resume' 'size diff' 'records diff';
+    align-content: safe center; padding-top: 4px;
+  }
+  .pickerIntro { grid-area: intro; }
+  .pickerIntro > svg { width: 56px; }
+  .bubbleLarge { font-size: 1rem; padding: 10px 14px; }
+  .resume { grid-area: resume; align-self: center; padding: 12px 20px; font-size: 1.1rem; }
+  .sizeTabs { grid-area: size; }
+  .diffList { grid-area: diff; gap: 10px; }
+  .recordsLink { grid-area: records; align-self: start; padding: 10px 18px; }
   .sizeTab { padding: 6px; }
-  .diffCard { padding: 12px 18px; }
+  .diffCard { padding: 10px 18px; }
+  .diffName { font-size: 1.3rem; }
+  .diffMedal { font-size: 1.8rem; }
 }
 .pickerIntro { display: flex; align-items: center; gap: 12px; }
 .bubbleLarge {
@@ -268,6 +322,15 @@
 .bubbleLarge b { color: var(--primary); font-weight: normal; }
 .resume { width: 100%; }
 .resume small { font-size: 0.85em; opacity: 0.85; }
+.diffCard { position: relative; }
+.diffMedal { position: absolute; right: 20px; top: 50%; translate: 0 -50%; font-size: 2.2rem; }
+.recordsLink {
+  justify-self: center; text-decoration: none;
+  padding: 12px 22px; border-radius: var(--radius-pill);
+  background: #fff4d6; color: #8a5a00; font-size: 1.1rem;
+  box-shadow: 0 4px 0 #f3d48a;
+}
+.recordsLink:active { transform: translateY(2px); box-shadow: 0 1px 0 #f3d48a; }
 .sizeTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
 .sizeTab {
   font: inherit; cursor: pointer; color: var(--text);
@@ -323,20 +386,81 @@
 .winStats dt { font-size: 0.85rem; color: var(--text-muted); }
 .winStats dd { margin: 0; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
 .winStats em { font-style: normal; color: var(--danger); font-size: 0.9rem; }
-.winActions { display: grid; gap: 10px; width: 100%; margin-top: 8px; }
-.win > svg:first-child { width: clamp(72px, 14dvh, 110px); height: auto; }
+.winActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 8px; }
+.winActions > :first-child, .winActions > :last-child { grid-column: 1 / -1; }
+.winLink {
+  display: grid; place-items: center; text-decoration: none;
+  border-radius: var(--radius-pill); padding: 12px 16px; font-size: 1.1rem;
+  background: #fff4d6; color: #8a5a00; box-shadow: 0 5px 0 #f3d48a;
+}
+.winLink:active { transform: translateY(2px); box-shadow: 0 2px 0 #f3d48a; }
+.winMedal { font-size: clamp(3rem, 10dvh, 4.5rem); line-height: 1; animation: star-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.15)); }
+.winSub b { font-weight: normal; }
+.nextGoal { margin: 0; font-size: 0.95rem; color: var(--text-muted); }
+.nextGoal b { font-weight: normal; color: var(--text); }
+
 @media (max-height: 600px) {
   .win { gap: 4px; }
-  .win > svg:first-child { display: none; }
+  .winMedal { font-size: 2.4rem; }
   .win h2 { font-size: 1.5rem; }
   .stars svg { width: 34px; height: 34px; }
   .winStats { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); margin: 4px 0; }
   .recordBanner { padding: 4px 12px; font-size: 0.95rem; }
   .winStats dd { font-size: 1.1rem; }
-  .winActions { grid-template-columns: repeat(3, 1fr); margin-top: 4px; }
+  .winActions { grid-template-columns: repeat(4, 1fr); margin-top: 4px; }
+  .winActions > :first-child, .winActions > :last-child { grid-column: auto; }
+  .winLink { padding: 10px 8px; font-size: 1rem; }
   .winActions > * { padding: 10px 8px; font-size: 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fx_place, .fx_hint, .fx_complete, .fx_win, .fx_wrong, .wrong > span, .sparkle, .starOn, .bubble { animation: none; }
+  .fx_place, .fx_hint, .fx_complete, .fx_win, .fx_wrong, .wrong > span, .sparkle, .starOn, .bubble, .startBtn::after, .winMedal, .overlayCard { animation: none; }
+}
+
+/* 낮은 화면에서 상단 상태 줄을 얇게 (위의 기본 규칙보다 뒤에 와야 함) */
+@media (max-height: 600px) {
+  .diffChip { padding: 4px 12px; min-height: 34px; font-size: 0.95rem; }
+  .stat { min-height: 34px; padding-top: 2px; padding-bottom: 2px; }
+  .pauseBtn { width: 28px; height: 28px; }
+  .sizeSwitch button { min-height: 30px; padding: 4px 9px; }
+}
+
+/* ───────── 화면 크기별 덮어쓰기 (기본 규칙보다 뒤에 있어야 적용됨) ───────── */
+/* 세로 공간이 좁은 화면 (폰 가로, 작은 폰): 장식 요소를 줄인다 */
+@media (max-height: 600px) {
+  .coach { min-height: 0; }
+  .coach svg { width: 40px; }
+  .bubble { font-size: 0.95rem; padding: 6px 12px; }
+  .toolLabel { display: none; }
+  .toolIcon { width: 42px; height: 42px; }
+  .toolIcon svg { width: 22px; height: 22px; }
+}
+
+/* 폰 가로처럼 낮은 가로 화면: 보드는 높이를 꽉 채우고, 숫자 카드는 오른쪽 열에 */
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 600px) {
+  .play {
+    grid-template-areas: 'board side' 'board pad' 'board tools';
+    grid-template-columns: minmax(0, 1fr) clamp(270px, 44vw, 440px);
+    grid-template-rows: auto 1fr auto;
+    gap: 6px clamp(12px, 2.5vw, 24px);
+    padding-top: 0;
+  }
+  .padArea { width: 100%; align-self: center; }
+  .pad { padding-top: 6px; row-gap: 12px; }
+  .pad6 { --cols: 3; }
+  .pad8 { --cols: 4; }
+  .card { height: clamp(40px, 12dvh, 64px); }
+  .cardNum { font-size: clamp(1.25rem, 7dvh, 2.1rem); }
+  .pace { font-size: 0.85rem; }
+}
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 430px) {
+  .coach { display: none; }
+}
+
+/* 세로로 짧은 폰 (작은 폰, 주소창 있는 브라우저): 보드·카드에 공간을 몰아준다 */
+@media (max-aspect-ratio: 1/1) and (max-height: 720px) {
+  .coach { display: none; }
+  .toolLabel { display: none; }
+  .toolIcon { width: 46px; height: 46px; }
+  .tool { padding: 0; }
 }

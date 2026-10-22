@@ -11,6 +11,8 @@ const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 export function Coach() {
   const event = useSudoku((s) => s.event);
   const name = useSettings((s) => s.playerName);
+  const status = useSudoku((s) => s.game?.status);
+  const paused = useSudoku((s) => s.paused);
   const [line, setLine] = useState<{ text: string; mood: RobotMood }>({ text: '빈칸을 누르고 숫자 카드를 골라 봐!', mood: 'idle' });
 
   useEffect(() => {
@@ -29,11 +31,19 @@ export function Coach() {
     return () => clearTimeout(t);
   }, [event, name]);
 
+  // 시작 전·멈춤 중에는 상황 안내가 우선
+  const shown =
+    status === 'ready'
+      ? { text: `${callName(name)}, 준비되면 시작하기를 눌러 줘!`, mood: 'happy' as const }
+      : status === 'playing' && paused
+        ? { text: '쉬는 중이야. 다시 하려면 계속하기!', mood: 'think' as const }
+        : line;
+
   return (
     <div className={styles.coach}>
-      <Robot mood={line.mood} size={64} key={line.mood === 'oops' ? `oops${event?.key}` : 'robot'} />
+      <Robot mood={shown.mood} size={64} key={shown.mood === 'oops' ? `oops${event?.key}` : 'robot'} />
       <p className={styles.bubble} key={`line${event?.key}`} aria-live="polite">
-        {line.text}
+        {shown.text}
       </p>
     </div>
   );

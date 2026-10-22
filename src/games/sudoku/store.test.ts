@@ -8,6 +8,7 @@ describe('sudoku store', () => {
   beforeEach(() => {
     localStorage.clear();
     s().newGame('medium', 4);
+    s().start();
   });
 
   it('칸 먼저 → 숫자: 정답이면 놓이고 남은 개수가 줄어든다', () => {
@@ -83,10 +84,13 @@ describe('sudoku store', () => {
     const first = s().records['4-medium']!.bestMs!;
 
     s().newGame('medium');
+    s().start();
     s().tick(first + 5000);
     while (s().game!.status === 'playing') s().hint(Infinity);
     expect(s().game!.prevBestMs).toBe(first);
-    expect(s().records['4-medium']).toEqual({ wins: 2, bestMs: first });
+    expect(s().records['4-medium']).toMatchObject({ wins: 2, bestMs: first });
+    expect(s().records['4-medium']!.runs!.map((r) => r.ms)).toEqual([first, first + 5000]);
+    expect(s().game!.rank).toBe(2);
   });
 
   it('힌트 제한을 넘으면 동작하지 않는다', () => {
@@ -97,6 +101,7 @@ describe('sudoku store', () => {
 
   it.each([6, 8] as const)('%ix%i 게임: 크기를 기억하고 크기별로 기록한다', (size) => {
     s().newGame('easy', size);
+    s().start();
     expect(s().size).toBe(size);
     expect(s().game!.values).toHaveLength(size * size);
     const g = s().game!;
@@ -118,7 +123,28 @@ describe('sudoku store', () => {
       JSON.stringify({ version: 1, state: { game: null, history: [], noteMode: false, records: { easy: { wins: 3, bestMs: 5000 } } } }),
     );
     await useSudoku.persist.rehydrate();
-    expect(s().records['4-easy']).toEqual({ wins: 3, bestMs: 5000 });
+    expect(s().records['4-easy']).toMatchObject({ wins: 3, bestMs: 5000, runs: [{ ms: 5000 }] });
     expect(s().size).toBe(4);
+  });
+
+  it('시작 전·멈춤 중에는 시간이 흐르지 않고 입력도 안 된다', () => {
+    s().newGame('easy', 4);
+    expect(s().game!.status).toBe('ready');
+    const i = firstEmpty();
+    s().tick(1000);
+    s().selectCell(i);
+    expect(s().game!.elapsedMs).toBe(0);
+    expect(s().selected).toBeNull();
+    s().start();
+    s().tick(1000);
+    expect(s().game!.elapsedMs).toBe(1000);
+    s().pause();
+    s().tick(1000);
+    s().selectCell(i);
+    expect(s().game!.elapsedMs).toBe(1000);
+    expect(s().selected).toBeNull();
+    s().start();
+    s().selectCell(i);
+    expect(s().selected).toBe(i);
   });
 });
