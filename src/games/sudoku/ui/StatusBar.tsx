@@ -5,7 +5,7 @@ import { ClockIcon } from '@/shared/ui/icons';
 import type { BoardSize } from '../engine';
 import { MEDAL_ICON, MEDAL_LABEL, nextTarget } from '../records';
 import { hasProgress, recordKey, useSudoku } from '../store';
-import { DIFFICULTY_LABEL, SIZES, sizeLabel } from './labels';
+import { DIFFICULTY_LABEL, SIZES, modeLabel } from './labels';
 import styles from './Sudoku.module.css';
 
 export function StatusBar({ showMistakes, onNewGame }: { showMistakes: boolean; onNewGame: () => void }) {
@@ -35,8 +35,8 @@ export function StatusBar({ showMistakes, onNewGame }: { showMistakes: boolean; 
       <div className={styles.status}>
         <div className={styles.sizeSwitch} role="radiogroup" aria-label="보드 크기 바꾸기">
           {SIZES.map((n) => (
-            <button key={n} role="radio" aria-checked={n === size} className={n === size ? styles.sizeOn : undefined} onClick={() => chooseSize(n)}>
-              {sizeLabel(n)}
+            <button key={n} role="radio" aria-checked={n === size} aria-label={`${modeLabel(n)} 블록`} className={n === size ? styles.sizeOn : undefined} onClick={() => chooseSize(n)}>
+              {modeLabel(n)}
             </button>
           ))}
         </div>
@@ -78,10 +78,10 @@ export function StatusBar({ showMistakes, onNewGame }: { showMistakes: boolean; 
       </div>
       <ConfirmDialog
         open={switchTo !== null}
-        title={switchTo ? `${sizeLabel(switchTo)}로 바꿀까?` : ''}
+        title={switchTo ? `${modeLabel(switchTo)} 블록으로 바꿀까?` : ''}
         message="진행 중인 게임은 취소돼요."
         cancelLabel="하던 게임 계속하기"
-        confirmLabel={switchTo ? `취소하고 ${sizeLabel(switchTo)} 하기` : ''}
+        confirmLabel={switchTo ? `취소하고 ${modeLabel(switchTo)} 블록 하기` : ''}
         onCancel={() => {
           setSwitchTo(null);
           if (resumeAfter.current) start();

@@ -39,26 +39,18 @@ const RULES_4X4: Record<Difficulty, DifficultyRule> = {
 };
 
 /**
- * 6x6(36칸): 최소 힌트는 보통 10~12개. 쉬움/중간은 nakedSingle만으로,
- * 어려움은 hiddenSingle(줄/박스에서 그 숫자가 갈 곳이 하나뿐)까지 허용.
+ * 9x9(81칸, 일반 스도쿠): 유일해 최소 힌트는 17개지만 아이용으로 넉넉하게.
+ * 쉬움/중간은 nakedSingle만으로, 어려움은 hiddenSingle(줄/블록에서 그 숫자가 갈 곳이 하나뿐)까지.
  */
-const RULES_6X6: Record<Difficulty, DifficultyRule> = {
-  easy: { minGivens: 22, maxGivens: 24, allowed: ['nakedSingle'], minBottlenecks: 0 },
-  medium: { minGivens: 16, maxGivens: 19, allowed: ['nakedSingle'], minBottlenecks: 0 },
-  hard: { minGivens: 11, maxGivens: 14, allowed: ['nakedSingle', 'hiddenSingle'], minBottlenecks: 2 },
-};
-
-/** 8x8(64칸, 박스 2x4): 최소 힌트는 보통 18~20개. */
-const RULES_8X8: Record<Difficulty, DifficultyRule> = {
+const RULES_9X9: Record<Difficulty, DifficultyRule> = {
   easy: { minGivens: 40, maxGivens: 44, allowed: ['nakedSingle'], minBottlenecks: 0 },
-  medium: { minGivens: 30, maxGivens: 35, allowed: ['nakedSingle'], minBottlenecks: 0 },
-  hard: { minGivens: 22, maxGivens: 27, allowed: ['nakedSingle', 'hiddenSingle'], minBottlenecks: 2 },
+  medium: { minGivens: 33, maxGivens: 37, allowed: ['nakedSingle'], minBottlenecks: 0 },
+  hard: { minGivens: 27, maxGivens: 31, allowed: ['nakedSingle', 'hiddenSingle'], minBottlenecks: 2 },
 };
 
 function rulesFor(spec: BoardSpec): Record<Difficulty, DifficultyRule> {
   if (spec.size === 4) return RULES_4X4;
-  if (spec.size === 6) return RULES_6X6;
-  if (spec.size === 8) return RULES_8X8;
+  if (spec.size === 9) return RULES_9X9;
   // 그 밖의 크기는 칸 수 비율로 근사
   const cells = spec.size * spec.size;
   const scale = (ratio: number) => Math.round(cells * ratio);

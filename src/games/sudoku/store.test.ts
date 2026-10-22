@@ -43,7 +43,8 @@ describe('sudoku store', () => {
 
   it('오답은 실수로 기록되고, 되돌리기로 되돌릴 수 있다', () => {
     const i = firstEmpty();
-    const wrong = (s().game!.solution[i] % 4) + 1;
+    // 이미 다 놓인 숫자 카드는 눌리지 않으므로, 아직 남은 숫자 중 오답을 고른다
+    const wrong = [1, 2, 3, 4].find((n) => n !== s().game!.solution[i] && remainingOf(s().game!, n) > 0)!;
     s().selectCell(i);
     s().pressNumber(wrong);
     expect(s().game!.values[i]).toBe(wrong);
@@ -99,7 +100,7 @@ describe('sudoku store', () => {
     expect(s().game!.hintsUsed).toBe(1);
   });
 
-  it.each([6, 8] as const)('%ix%i 게임: 크기를 기억하고 크기별로 기록한다', (size) => {
+  it.each([9] as const)('%ix%i 게임: 크기를 기억하고 크기별로 기록한다', (size) => {
     s().newGame('easy', size);
     s().start();
     expect(s().size).toBe(size);
@@ -146,5 +147,25 @@ describe('sudoku store', () => {
     s().start();
     s().selectCell(i);
     expect(s().selected).toBe(i);
+  });
+
+  it('v3의 6×6·8×8 기록과 진행 중 게임은 정리된다', async () => {
+    localStorage.setItem(
+      'ideun.sudoku',
+      JSON.stringify({
+        version: 3,
+        state: {
+          game: { spec: { size: 6, boxRows: 2, boxCols: 3 }, status: 'playing' },
+          history: [],
+          noteMode: false,
+          size: 8,
+          records: { '4-easy': { wins: 1, bestMs: 9000 }, '6-easy': { wins: 2, bestMs: 1000 }, '8-hard': { wins: 1 } },
+        },
+      }),
+    );
+    await useSudoku.persist.rehydrate();
+    expect(Object.keys(s().records)).toEqual(['4-easy']);
+    expect(s().size).toBe(4);
+    expect(s().game).toBeNull();
   });
 });

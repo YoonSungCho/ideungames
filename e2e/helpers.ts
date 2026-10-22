@@ -18,15 +18,19 @@ export async function saved(page: Page) {
 }
 
 /** 홈 → 스도쿠 → 크기·난이도 선택 → (시작 전 화면) */
-export async function openNewGame(page: Page, size: 4 | 6 | 8, difficulty: '쉬움' | '중간' | '어려움' = '쉬움') {
+export type Size = 4 | 9;
+/** 모드 이름은 블록 크기: 4×4판 → "2×2", 9×9판 → "3×3" */
+export const mode = (size: Size) => (size === 4 ? '2×2' : '3×3');
+
+export async function openNewGame(page: Page, size: Size, difficulty: '쉬움' | '중간' | '어려움' = '쉬움') {
   await page.goto('./');
   await page.getByRole('link', { name: /스도쿠/ }).click();
-  await page.getByRole('radio', { name: new RegExp(`${size}×${size}`) }).click();
+  await page.getByRole('radio', { name: new RegExp(`^${mode(size)} 블록`) }).click();
   await page.getByRole('button', { name: new RegExp(`^.*${difficulty}`) }).first().click();
   await expect(page.getByRole('button', { name: '▶ 시작하기' })).toBeVisible();
 }
 
-export async function startGame(page: Page, size: 4 | 6 | 8, difficulty: '쉬움' | '중간' | '어려움' = '쉬움') {
+export async function startGame(page: Page, size: Size, difficulty: '쉬움' | '중간' | '어려움' = '쉬움') {
   await openNewGame(page, size, difficulty);
   await page.getByRole('button', { name: '▶ 시작하기' }).click();
   await expect(page.getByRole('button', { name: '▶ 시작하기' })).toBeHidden();

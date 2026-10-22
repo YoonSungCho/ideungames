@@ -28,8 +28,8 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-home.png`) });
 
-    for (const size of [4, 6, 8] as const) {
-      await openNewGame(page, size, size === 8 ? '어려움' : '쉬움');
+    for (const size of [4, 9] as const) {
+      await openNewGame(page, size, size === 9 ? '어려움' : '쉬움');
       await expectFitsViewport(page);
       await page.getByRole('button', { name: '▶ 시작하기' }).click();
       await placeOneCorrect(page);

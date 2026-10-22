@@ -257,6 +257,7 @@
 .c6 { --c: var(--num-6); }
 .c7 { --c: var(--num-7); }
 .c8 { --c: var(--num-8); }
+.c9 { --c: var(--num-9); }
 .cardNum { font-size: clamp(1.7rem, 5.5dvh, 3.2rem); line-height: 1; }
 .badge {
   position: absolute; top: -10px; right: -8px;
@@ -279,12 +280,15 @@
 
 /* 6·8칸 카드: 카드 폭이 좁아지므로 배지를 줄이고, 좁은 화면의 8칸은 4개씩 2줄 */
 .pad4 { --cols: 4; }
-.pad6, .pad8 { gap: clamp(5px, 1.4vw, 10px); }
-.pad6 .badge, .pad8 .badge { min-width: 22px; height: 22px; padding: 0 5px; font-size: 0.8rem; top: -8px; right: -6px; border-width: 2px; }
-.pad6 .card, .pad8 .card { border-radius: 16px; }
-@container (max-width: 520px) {
-  .pad8 { --cols: 4; row-gap: 14px; }
-  .pad8 .card { height: clamp(48px, 7dvh, 76px); }
+.pad9 { gap: clamp(4px, 1.2vw, 10px); }
+.pad9 .badge { min-width: 22px; height: 22px; padding: 0 5px; font-size: 0.8rem; top: -8px; right: -6px; border-width: 2px; }
+.pad9 .card { border-radius: 14px; }
+.pad9 .cardNum { font-size: clamp(1.4rem, 4.5dvh, 2.8rem); }
+/* 좁은 화면의 9개 카드: 5개 + 4개 두 줄 (아랫줄 가운데 정렬 — 10칸 그리드에 2칸씩) */
+@container (max-width: 560px) {
+  .pad9 { --cols: 10; row-gap: 14px; }
+  .pad9 .card { grid-column: span 2; height: clamp(46px, 6.5dvh, 72px); }
+  .pad9 .card:nth-child(6) { grid-column: 2 / span 2; }
 }
 
 /* ───────── 난이도 선택 ───────── */
@@ -331,7 +335,7 @@
   box-shadow: 0 4px 0 #f3d48a;
 }
 .recordsLink:active { transform: translateY(2px); box-shadow: 0 1px 0 #f3d48a; }
-.sizeTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.sizeTabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
 .sizeTab {
   font: inherit; cursor: pointer; color: var(--text);
   display: grid; justify-items: center; gap: 2px;
@@ -447,8 +451,9 @@
   }
   .padArea { width: 100%; align-self: center; }
   .pad { padding-top: 6px; row-gap: 12px; }
-  .pad6 { --cols: 3; }
-  .pad8 { --cols: 4; }
+  .pad9 { --cols: 10; }
+  .pad9 .card { grid-column: span 2; }
+  .pad9 .card:nth-child(6) { grid-column: 2 / span 2; }
   .card { height: clamp(40px, 12dvh, 64px); }
   .cardNum { font-size: clamp(1.25rem, 7dvh, 2.1rem); }
   .pace { font-size: 0.85rem; }

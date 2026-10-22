@@ -7,8 +7,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('홈 → 스도쿠: 크기·난이도 고르면 시작 전 화면, 시작하기를 눌러야 시간이 간다', async ({ page }) => {
-  await openNewGame(page, 6, '중간');
-  await expect(page.getByText('6×6 중간')).toBeVisible();
+  await openNewGame(page, 9, '중간');
+  await expect(page.getByText('3×3 블록 · 중간')).toBeVisible();
   await page.waitForTimeout(1300);
   expect(await timerText(page)).toBe('0:00');
   // 시작 전에는 칸을 눌러도 선택되지 않는다
@@ -18,7 +18,8 @@ test('홈 → 스도쿠: 크기·난이도 고르면 시작 전 화면, 시작�
   await page.getByRole('button', { name: '▶ 시작하기' }).click();
   await expect.poll(() => timerText(page), { timeout: 4000 }).not.toBe('0:00');
   await expect(page.getByText(/메달까지/)).toBeVisible();
-  expect((await saved(page)).game!.spec.size).toBe(6);
+  expect((await saved(page)).game!.spec.size).toBe(9);
+  expect(await cells(page).count()).toBe(81);
 });
 
 test('멈추기 → 보드 가림, 시간 멈춤 → 계속하기', async ({ page }) => {
@@ -32,30 +33,30 @@ test('멈추기 → 보드 가림, 시간 멈춤 → 계속하기', async ({ pag
   await expect(page.getByRole('button', { name: '▶ 계속하기' })).toBeHidden();
 });
 
-test('상단 크기 전환: 시작 전이면 바로, 진행 중이면 물어본다', async ({ page }) => {
+test('상단 모드 전환: 시작 전이면 바로, 진행 중이면 물어본다', async ({ page }) => {
   await openNewGame(page, 4);
-  await page.getByRole('radio', { name: '6×6' }).click();
+  await page.getByRole('radio', { name: '3×3 블록' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(page.getByText('6×6 쉬움')).toBeVisible();
-  expect((await saved(page)).game!.spec.size).toBe(6);
+  await expect(page.getByText('3×3 블록 · 쉬움')).toBeVisible();
+  expect((await saved(page)).game!.spec.size).toBe(9);
 
   await page.getByRole('button', { name: '▶ 시작하기' }).click();
   await placeOneCorrect(page);
-  await page.getByRole('radio', { name: '8×8' }).click();
+  await page.getByRole('radio', { name: '2×2 블록' }).click();
   const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('8×8로 바꿀까?');
+  await expect(dialog).toContainText('2×2 블록으로 바꿀까?');
   await expect(dialog).toContainText('진행 중인 게임은 취소돼요');
 
   // 계속하기 → 그대로 이어서 (멈춤 화면 없이)
   await dialog.getByRole('button', { name: '하던 게임 계속하기' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('button', { name: '▶ 계속하기' })).toBeHidden();
-  expect((await saved(page)).game!.spec.size).toBe(6);
+  expect((await saved(page)).game!.spec.size).toBe(9);
 
-  await page.getByRole('radio', { name: '8×8' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: /취소하고 8×8/ }).click();
-  await expect(page.getByText('8×8 쉬움')).toBeVisible();
-  expect((await saved(page)).game).toMatchObject({ spec: { size: 8 }, status: 'ready' });
+  await page.getByRole('radio', { name: '2×2 블록' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /취소하고 2×2 블록/ }).click();
+  await expect(page.getByText('2×2 블록 · 쉬움')).toBeVisible();
+  expect((await saved(page)).game).toMatchObject({ spec: { size: 4 }, status: 'ready' });
 });
 
 test('뒤로 가기: 진행 중이면 확인, 그만해도 이어서 할 수 있다 (멈춘 상태로)', async ({ page }) => {
@@ -123,7 +124,7 @@ test('끝까지 풀면 메달·기록 → 기록 화면 → 뒤로는 게임으�
 
   await page.getByRole('link', { name: '뒤로' }).click();
   await expect(page).toHaveURL(/games\/sudoku$/);
-  await expect(page.getByRole('radio', { name: /4×4/ })).toBeVisible();
+  await expect(page.getByRole('radio', { name: /^2×2 블록/ })).toBeVisible();
 
   // 한 판 더 흐름: 기록 화면에서 바로 도전
   await page.getByRole('link', { name: /기록 · 메달/ }).click();

@@ -6,7 +6,7 @@ import { StarIcon } from '@/shared/ui/icons';
 import type { BoardSize, Difficulty } from '../engine';
 import { MEDAL_ICON, MEDAL_LABEL, MEDALS, medalFor, nextMedalAfter, type Medal } from '../records';
 import { hasProgress, recordKey, useSudoku, type SudokuRun } from '../store';
-import { DIFFICULTIES, DIFFICULTY_LABEL, DIFFICULTY_STARS, SIZES, sizeLabel } from './labels';
+import { DIFFICULTIES, DIFFICULTY_LABEL, DIFFICULTY_STARS, SIZES, modeLabel } from './labels';
 import styles from './Records.module.css';
 
 const SHOWN_RUNS = 5;
@@ -150,7 +150,7 @@ export function RecordsPage() {
       <div className={styles.tabs} role="tablist" aria-label="보드 크기">
         {SIZES.map((n) => (
           <button key={n} role="tab" aria-selected={size === n} className={size === n ? styles.tabOn : undefined} onClick={() => setSize(n)}>
-            {sizeLabel(n)}
+            {modeLabel(n)} 블록
           </button>
         ))}
       </div>
@@ -168,7 +168,7 @@ export function RecordsPage() {
       <ConfirmDialog
         open={confirm !== null}
         title="새 게임을 시작할까?"
-        message={game ? `하던 ${sizeLabel(game.spec.size)} ${DIFFICULTY_LABEL[game.difficulty]} 게임은 취소돼요.` : undefined}
+        message={game ? `하던 ${modeLabel(game.spec.size)} 블록 ${DIFFICULTY_LABEL[game.difficulty]} 게임은 취소돼요.` : undefined}
         cancelLabel="그냥 기록 볼래"
         confirmLabel="취소하고 새로 시작"
         onCancel={() => setConfirm(null)}

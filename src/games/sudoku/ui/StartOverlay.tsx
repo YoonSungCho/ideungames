@@ -1,6 +1,6 @@
 import { Button } from '@/shared/ui/Button';
 import { useSudoku } from '../store';
-import { DIFFICULTY_LABEL, sizeLabel } from './labels';
+import { DIFFICULTY_LABEL, modeLabel } from './labels';
 import styles from './Sudoku.module.css';
 
 /** 시작 전 / 멈춤 중에 보드를 가리고 큰 시작 버튼을 보여준다 (시간은 누를 때부터). */
@@ -13,7 +13,7 @@ export function StartOverlay() {
     <div className={styles.overlay}>
       <div className={styles.overlayCard}>
         <p className={styles.overlayTitle}>
-          {ready ? `${sizeLabel(game.spec.size)} ${DIFFICULTY_LABEL[game.difficulty]}` : '잠깐 쉬는 중'}
+          {ready ? `${modeLabel(game.spec.size)} 블록 · ${DIFFICULTY_LABEL[game.difficulty]}` : '잠깐 쉬는 중'}
         </p>
         <Button size="lg" className={styles.startBtn} onClick={start} autoFocus>
           ▶ {ready ? '시작하기' : '계속하기'}

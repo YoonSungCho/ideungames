@@ -9,8 +9,7 @@ export const MEDAL_LABEL: Record<Medal, string> = { diamond: '다이아', gold: 
 /** [다이아, 금, 은, 동] 기준 시간(초) */
 const LIMITS: Record<BoardSize, Record<Difficulty, [number, number, number, number]>> = {
   4: { easy: [15, 30, 60, 120], medium: [25, 45, 90, 180], hard: [40, 70, 120, 240] },
-  6: { easy: [60, 120, 240, 480], medium: [120, 240, 420, 720], hard: [180, 360, 600, 900] },
-  8: { easy: [150, 300, 600, 1200], medium: [300, 540, 900, 1500], hard: [480, 780, 1200, 1800] },
+  9: { easy: [240, 480, 900, 1500], medium: [420, 720, 1200, 2100], hard: [600, 1020, 1680, 2700] },
 };
 
 export function medalLimitMs(size: BoardSize, difficulty: Difficulty, medal: Medal) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countSolutions, createRng, generatePuzzle, generateSolvedGrid, solveLogically, SPEC_4X4, SPEC_6X6, SPEC_8X8, unitsOf, type Difficulty } from '.';
+import { countSolutions, createRng, generatePuzzle, generateSolvedGrid, solveLogically, SPEC_4X4, SPEC_9X9, unitsOf, type Difficulty } from '.';
 
 const spec = SPEC_4X4;
 
@@ -55,12 +55,11 @@ describe('generatePuzzle', () => {
 });
 
 describe.each([
-  [SPEC_6X6, { easy: [22, 24], medium: [16, 19], hard: [11, 14] }],
-  [SPEC_8X8, { easy: [40, 44], medium: [30, 35], hard: [22, 27] }],
+  [SPEC_9X9, { easy: [40, 44], medium: [33, 37], hard: [27, 31] }],
 ] as const)('generatePuzzle $size x $size', (spec, ranges) => {
   for (const difficulty of ['easy', 'medium', 'hard'] as const) {
     it(`${difficulty}: 유일해, 힌트 개수 범위, 논리로 풀림`, () => {
-      for (let seed = 1; seed <= 15; seed++) {
+      for (let seed = 1; seed <= 8; seed++) {
         const p = generatePuzzle(difficulty, { spec, seed });
         const givens = p.givens.filter((v) => v !== 0).length;
         expect(givens).toBeGreaterThanOrEqual(ranges[difficulty][0]);

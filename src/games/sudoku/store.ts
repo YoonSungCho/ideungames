@@ -332,7 +332,7 @@ export const useSudoku = create<SudokuState>()(
     },
     {
       name: storageKey('sudoku'),
-      version: 3,
+      version: 4,
       partialize: (s) => ({ game: s.game, history: s.history, noteMode: s.noteMode, size: s.size, records: s.records }),
       migrate: (persisted, version) => {
         const state = persisted as Partial<SudokuState> & { records?: Record<string, SudokuRecord> };
@@ -346,6 +346,20 @@ export const useSudoku = create<SudokuState>()(
         if (version < 3 && state.records) {
           for (const rec of Object.values(state.records) as SudokuRecord[]) {
             if (!rec.runs && rec.bestMs !== undefined) rec.runs = [{ ms: rec.bestMs, at: 0, mistakes: 0, hints: 0 }];
+          }
+        }
+        // v4: 6×6·8×8 모드 제거 (정사각 블록만) → 그 기록·진행 중 게임은 정리
+        if (version < 4) {
+          const valid = (n: number) => n === 4 || n === 9;
+          if (state.records) {
+            state.records = Object.fromEntries(
+              Object.entries(state.records).filter(([k]) => valid(Number(k.split('-')[0]))),
+            ) as SudokuState['records'];
+          }
+          if (state.size !== undefined && !valid(state.size)) state.size = 4;
+          if (state.game && !valid(state.game.spec.size)) {
+            state.game = null;
+            state.history = [];
           }
         }
         return state as SudokuState;

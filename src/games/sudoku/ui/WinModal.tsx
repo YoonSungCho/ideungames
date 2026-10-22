@@ -9,7 +9,7 @@ import { Modal } from '@/shared/ui/Modal';
 import type { BoardSize } from '../engine';
 import { MEDAL_ICON, MEDAL_LABEL, MEDALS, medalFor, nextMedalAfter } from '../records';
 import { recordKey, useSudoku } from '../store';
-import { DIFFICULTY_LABEL, sizeLabel } from './labels';
+import { DIFFICULTY_LABEL, modeLabel } from './labels';
 import styles from './Sudoku.module.css';
 
 export function WinModal({ onPickDifficulty }: { onPickDifficulty: () => void }) {
@@ -46,7 +46,7 @@ export function WinModal({ onPickDifficulty }: { onPickDifficulty: () => void })
             ))}
           </div>
           <p className={styles.winSub}>
-            스도쿠 {sizeLabel(size)} {DIFFICULTY_LABEL[game.difficulty]} 완성!
+            스도쿠 {modeLabel(size)} 블록 {DIFFICULTY_LABEL[game.difficulty]} 완성!
             {medal && <> · <b className={styles[`pace_${medal}`]}>{MEDAL_LABEL[medal]} 메달</b></>}
           </p>
           {newRecord && (
