@@ -4,6 +4,7 @@ import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './he
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
   'fold-cover': [344, 882],
+  'fold-wide-cover': [480, 760],
   'phone': [412, 915],
   'phone-browser': [412, 760],
   'small-phone': [360, 640],
@@ -39,6 +40,14 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
       // 보드 칸은 손가락으로 누를 만큼 (최소 30px), 카드는 최소 40px
       expect(board!.width / size, `보드 칸 ${board!.width / size}`).toBeGreaterThanOrEqual(30);
       expect(Math.min(card!.width, card!.height), '카드 크기').toBeGreaterThanOrEqual(40);
+      if (width < height && height >= 760) {
+        // 세로로 넉넉한 화면: 보드가 화면 폭을 꽉 채운다 (위쪽 줄이 보드를 줄이지 않음)
+        expect(board!.width, '세로 화면 보드 폭').toBeGreaterThanOrEqual(Math.min(width - 40, 560));
+      }
+      if (width > height && width >= 560) {
+        // 가로 화면: 숫자 카드는 보드 오른쪽 칸에
+        expect(card!.x, '카드는 보드 오른쪽').toBeGreaterThan(board!.x + board!.width);
+      }
       await page.screenshot({ path: info.outputPath(`${name}-${size}.png`) });
       // 다음 크기는 새로 고르도록 진행 중인 게임을 비운다
       // (멈춰야 타이머가 저장소를 다시 쓰지 않는다)

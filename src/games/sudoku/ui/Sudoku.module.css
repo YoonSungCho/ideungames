@@ -28,30 +28,26 @@
   place-items: center;
 }
 
-/* 가로로 넓은 화면 (폴드 메인 화면, 폰 가로, 태블릿 가로, PC):
- * 보드 + 바로 아래 숫자 카드(보드와 같은 폭으로 크게) | 오른쪽에 상태·로봇·도구 */
+/* 가로로 넓은 화면 (폴드 펼침, 폰 가로, 태블릿 가로, PC):
+ * 왼쪽 보드는 높이를 꽉 채워 크게 | 오른쪽 칸에 상태·로봇·숫자 카드·도구 */
 @media (min-aspect-ratio: 1/1) and (min-width: 560px) {
   .play {
     display: grid;
-    grid-template-areas: 'board side' 'board tools' 'pad tools';
-    grid-template-columns: minmax(0, 1fr) clamp(220px, 30vw, 340px);
+    grid-template-areas: 'board side' 'board pad' 'board tools';
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 30vw, 400px);
     grid-template-rows: auto 1fr auto;
     align-items: start;
-    gap: clamp(8px, 1.6dvh, 14px) clamp(16px, 3vw, 32px);
+    gap: clamp(6px, 1.6dvh, 14px) clamp(16px, 3vw, 32px);
     width: 100%;
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
   }
-  .side, .tools { width: 100%; }
+  .side, .tools, .padArea { width: 100%; }
   .boardWrap { width: 100%; height: 100%; min-height: 0; margin: 0; }
-  .tools { align-self: end; }
-  .padArea { justify-self: center; width: min(100%, 680px); }
+  .padArea { align-self: center; }
 }
 
-
 /* ───────── 상단 상태 ───────── */
-.statusWrap { display: grid; gap: 6px; }
-.status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sizeSwitch {
   display: inline-flex; gap: 2px; padding: 3px;
   border-radius: var(--radius-pill); background: var(--surface); box-shadow: var(--shadow-sm);
@@ -70,7 +66,6 @@
   background: var(--surface); box-shadow: var(--shadow-sm);
 }
 .chipHint { font-size: 0.8rem; color: var(--text-muted); margin-left: 2px; }
-.mistakes { margin-left: auto; }
 .stat {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 6px 4px 12px; min-height: 40px; border-radius: var(--radius-pill);
@@ -86,8 +81,8 @@
   background: var(--surface-2); color: var(--primary);
   -webkit-tap-highlight-color: transparent;
 }
-.pace { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.92rem; color: var(--text-muted); }
-.paceInfo { display: flex; flex-wrap: wrap; gap: 2px 12px; min-width: 0; }
+.pace { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; font-size: 0.92rem; color: var(--text-muted); }
+.paceInfo { flex: 1; display: flex; flex-wrap: wrap; gap: 2px 12px; min-width: 0; }
 .paceInfo > span { white-space: nowrap; }
 .pace b { font-weight: normal; font-variant-numeric: tabular-nums; color: var(--text); }
 .pace_diamond b, b.pace_diamond { color: #0891b2; }
@@ -440,31 +435,30 @@
   .toolIcon svg { width: 22px; height: 22px; }
 }
 
-/* 폰 가로처럼 낮은 가로 화면: 보드는 높이를 꽉 채우고, 숫자 카드는 오른쪽 열에 */
-@media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 600px) {
-  .play {
-    grid-template-areas: 'board side' 'board pad' 'board tools';
-    grid-template-columns: minmax(0, 1fr) clamp(270px, 44vw, 440px);
-    grid-template-rows: auto 1fr auto;
-    gap: 6px clamp(12px, 2.5vw, 24px);
-    padding-top: 0;
-  }
-  .padArea { width: 100%; align-self: center; }
+/* 가로 화면의 오른쪽 칸 숫자 카드: 전화 키패드처럼 4개는 2×2, 9개는 3×3 */
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) {
   .pad { padding-top: 6px; row-gap: 12px; }
-  .pad9 { --cols: 10; }
-  .pad9 .card { grid-column: span 2; }
-  .pad9 .card:nth-child(6) { grid-column: 2 / span 2; }
-  .card { height: clamp(40px, 12dvh, 64px); }
-  .cardNum { font-size: clamp(1.25rem, 7dvh, 2.1rem); }
+  .pad4 { --cols: 2; }
+  .pad9 { --cols: 3; }
+  .pad9 .card, .pad9 .card:nth-child(6) { grid-column: auto; }
+  .pad .card, .pad9 .card { height: clamp(44px, 11dvh, 92px); }
+  .cardNum, .pad9 .cardNum { font-size: clamp(1.3rem, 6dvh, 2.8rem); }
+}
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 600px) {
+  .play { gap: 6px clamp(12px, 2.5vw, 24px); padding-top: 0; }
+  .pad .card, .pad9 .card { height: clamp(40px, 12dvh, 64px); }
   .pace { font-size: 0.85rem; }
 }
 @media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 430px) {
   .coach { display: none; }
 }
 
-/* 세로로 짧은 폰 (작은 폰, 주소창 있는 브라우저): 보드·카드에 공간을 몰아준다 */
-@media (max-aspect-ratio: 1/1) and (max-height: 720px) {
+/* 세로 화면: 보드 위는 상단 바 + 상태 한 줄만 (로봇 말풍선은 가로 화면의 오른쪽 칸에서만) */
+@media (max-aspect-ratio: 1/1), (max-width: 559px) {
   .coach { display: none; }
+}
+/* 세로로 짧은 폰 (작은 폰, 폴드 커버, 주소창 있는 브라우저): 보드·카드에 공간을 몰아준다 */
+@media (max-aspect-ratio: 1/1) and (max-height: 860px) {
   .toolLabel { display: none; }
   .toolIcon { width: 46px; height: 46px; }
   .tool { padding: 0; }

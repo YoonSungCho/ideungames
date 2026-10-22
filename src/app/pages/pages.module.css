@@ -17,6 +17,10 @@
   .title { font-size: 1.25rem; }
 }
 .title { margin: 0; font-size: 1.5rem; font-weight: normal; }
+/* 게임이 상단 바에 버튼을 넣으면 제목 대신 그것을 보여준다 */
+.slot { display: none; }
+.slot:not(:empty) { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: center; gap: 8px; }
+.header:has(.slot:not(:empty)) .title { display: none; }
 .iconBtn {
   display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
   background: var(--surface); box-shadow: var(--shadow-sm); color: var(--text); text-decoration: none;

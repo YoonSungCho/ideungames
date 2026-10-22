@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { HeaderSlotTarget } from '@/shared/ui/HeaderSlot';
 import { BackIcon, GearIcon } from '@/shared/ui/icons';
 import styles from './pages.module.css';
 
@@ -29,6 +30,7 @@ export function Header({ title, back, backTo = '/', backToPrevious, right }: Hea
         <span className={styles.iconSpacer} />
       )}
       <h1 className={styles.title}>{title}</h1>
+      <HeaderSlotTarget className={styles.slot} />
       {right ?? (
         <Link to="/settings" className={styles.iconBtn} aria-label="설정">
           <GearIcon />

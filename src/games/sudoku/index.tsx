@@ -10,7 +10,7 @@ import { DifficultyPicker } from './ui/DifficultyPicker';
 import { NumberPad } from './ui/NumberPad';
 import { RecordsPage } from './ui/RecordsPage';
 import { StartOverlay } from './ui/StartOverlay';
-import { StatusBar } from './ui/StatusBar';
+import { ModeBar, StatusBar } from './ui/StatusBar';
 import { WinModal } from './ui/WinModal';
 import styles from './ui/Sudoku.module.css';
 
@@ -118,7 +118,8 @@ function Play() {
   return (
     <div className={[styles.play, veiled && styles.veiled].filter(Boolean).join(' ')}>
       <div className={styles.side}>
-        <StatusBar showMistakes={challenge} onNewGame={() => setPicking(true)} />
+        <ModeBar onNewGame={() => setPicking(true)} />
+        <StatusBar showMistakes={challenge} />
         <Coach />
       </div>
       <div className={styles.boardWrap}>
