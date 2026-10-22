@@ -1,7 +1,9 @@
 # 게임 화면 UX 가이드
 
 스도쿠를 만들며 사용자(부모)와 정한 규칙. **새 게임도 이 흐름·배치를 그대로 따른다.**
-구현 예시는 `src/games/sudoku/` — 두 번째 게임에서 같은 코드가 필요해지면 `src/shared/`로 올린다.
+구현 예시: `src/games/sudoku/`(퍼즐, 시간 기록), `src/games/quick-math/`(스피드, 시간·점수 기록).
+공용 게임 부품은 `src/shared/game/` — `StartOverlay`(시작하기·계속하기), `useGameClock`/`useAutoPause`, 메달(`medals.ts`: 시간=lower/점수=higher), 기록(`records.ts`: `addRun`, TOP 10), 기록 화면 스타일(`Records.module.css`).
+세 번째 게임에서 또 같은 코드가 보이면 그때 `shared/`로 올린다.
 
 ## 1. 게임 한 판의 상태
 

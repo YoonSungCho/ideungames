@@ -7,7 +7,7 @@ import type { BoardSize, Difficulty } from '../engine';
 import { MEDAL_ICON, MEDAL_LABEL, MEDALS, medalFor, nextMedalAfter, type Medal } from '../records';
 import { hasProgress, recordKey, useSudoku, type SudokuRun } from '../store';
 import { DIFFICULTIES, DIFFICULTY_LABEL, DIFFICULTY_STARS, SIZES, modeLabel } from './labels';
-import styles from './Records.module.css';
+import styles from '@/shared/game/Records.module.css';
 
 const SHOWN_RUNS = 5;
 

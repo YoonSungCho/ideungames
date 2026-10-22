@@ -8,6 +8,7 @@
 - [docs/ADDING_A_GAME.md](docs/ADDING_A_GAME.md) — 새 게임 폴더 구조, manifest, 공용 모듈, 체크리스트
 - [docs/GAME_UX_GUIDE.md](docs/GAME_UX_GUIDE.md) — 모든 게임이 지켜야 할 화면 흐름·배치·반응형 규칙
 - [docs/TESTING.md](docs/TESTING.md) — 단위/E2E 테스트 하네스, 뷰포트 목록, 쓰는 원칙
+- 게임 공용 부품: `src/shared/game/` (시작하기 오버레이, 타이머, 메달, 기록) — 새 게임은 이걸 쓴다
 
 ## 작업 방식 (사용자가 정한 것)
 

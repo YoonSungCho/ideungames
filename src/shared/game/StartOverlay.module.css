@@ -1,0 +1,21 @@
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; padding: 12px; }
+.card {
+  display: grid; justify-items: center; gap: 10px;
+  max-width: 100%; padding: 20px 24px; border-radius: var(--radius-xl);
+  background: var(--surface); box-shadow: var(--shadow-lg); text-align: center;
+  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.title { margin: 0; font-size: 1.3rem; color: var(--text); }
+.hint { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+.startBtn { position: relative; font-size: 1.5rem; padding: 16px 40px; }
+/* 버튼 자체는 가만히, 바깥 링만 퍼져 나가며 "눌러 줘" 신호 (버튼을 흔들면 터치·테스트가 불안정) */
+.startBtn::after {
+  content: ''; position: absolute; inset: -4px; border-radius: inherit;
+  border: 3px solid var(--primary); pointer-events: none;
+  animation: ring 1.6s ease-out infinite;
+}
+@keyframes ring { from { opacity: 0.7; transform: scale(1); } to { opacity: 0; transform: scale(1.18, 1.35); } }
+@keyframes pop-in { from { transform: scale(0.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .card, .startBtn::after { animation: none; }
+}

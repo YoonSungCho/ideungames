@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './helpers';
+import { answerCurrent, openMath } from './math-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -81,5 +82,38 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS).filter(([n]) => 
     await expect(page.getByText('내 최고 기록')).toBeVisible();
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-records-data.png`), fullPage: true });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`빠른 계산 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/quick-math');
+    await page.getByRole('button', { name: '곱셈', exact: true }).click();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-math-menu.png`) });
+
+    await openMath(page, { ops: ['add', 'sub', 'mul'], difficulty: '어려움' });
+    await expectFitsViewport(page);
+    await page.getByRole('button', { name: '▶ 시작하기' }).click();
+    for (let i = 0; i < 3; i++) {
+      await answerCurrent(page);
+      await expectFitsViewport(page);
+      const stage = await page.locator('[data-stage]').boundingBox();
+      const problem = await page.getByRole('status').boundingBox();
+      // 식이 판 밖으로 넘치지 않고, 아이가 읽기 좋게 충분히 크다
+      expect(problem!.width, '식 폭').toBeLessThanOrEqual(stage!.width + 1);
+      expect(problem!.height, '식 높이').toBeGreaterThanOrEqual(48);
+    }
+    const k = await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: '5', exact: true }).boundingBox();
+    expect(Math.min(k!.width, k!.height), '패드 키 크기').toBeGreaterThanOrEqual(36);
+    if (width > height && width >= 560) {
+      const stage = await page.locator('[data-stage]').boundingBox();
+      expect(k!.x, '패드는 문제 오른쪽').toBeGreaterThan(stage!.x + stage!.width);
+    }
+    await page.screenshot({ path: info.outputPath(`${name}-math-play.png`) });
   });
 }

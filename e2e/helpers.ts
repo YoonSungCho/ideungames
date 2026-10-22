@@ -74,9 +74,16 @@ export async function expectFitsViewport(page: Page) {
     for (const el of document.querySelectorAll<HTMLElement>('button, a')) {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      // 스크롤 영역 안의 요소는 스크롤로 닿을 수 있으면 OK
-      const scroller = el.closest<HTMLElement>('[class*="picker"], [class*="page"]');
-      if (scroller && scroller.scrollHeight > scroller.clientHeight) continue;
+      // 세로 스크롤 영역 안의 요소는 스크롤로 닿을 수 있으면 OK (메뉴·기록 화면 등)
+      let scrollable = false;
+      for (let p = el.parentElement; p; p = p.parentElement) {
+        const oy = getComputedStyle(p).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight + 1) {
+          scrollable = true;
+          break;
+        }
+      }
+      if (scrollable && r.right <= vw + 1 && r.left >= -1) continue;
       const outY = !pageScrolls && (r.bottom > vh + 1 || r.top < -1);
       if (r.right > vw + 1 || r.left < -1 || outY) {
         out.push(`화면 밖: "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 20)}" ${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`);

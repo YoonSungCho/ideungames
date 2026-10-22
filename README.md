@@ -3,7 +3,9 @@
 이든이를 위한 두뇌 게임 놀이터. 정적 웹앱(PWA)으로 GitHub Pages에서 동작한다.
 
 - 배포 주소: https://yoonsungcho.github.io/ideungames/
-- 게임: 스도쿠 2×2 블록(4×4판) · 3×3 블록(9×9판) (각각 쉬움 / 중간 / 어려움)
+- 게임
+  - 스도쿠: 2×2 블록(4×4판) · 3×3 블록(9×9판), 쉬움 / 중간 / 어려움
+  - 빠른 계산: 덧셈·뺄셈·곱셈(구구단)·나눗셈, 20문제 기록 / 60초 타임어택
 
 ## 개발
 
@@ -28,6 +30,8 @@ src/
     registry.ts       # games/*/manifest.ts 자동 수집
     types.ts          # GameManifest, 카테고리
     sudoku/           # 게임 1개 = 폴더 1개 (engine / store / records / ui)
+    quick-math/       # 빠른 계산
+  shared/game/  # 게임 공용: 시작하기 오버레이, 타이머·자동 멈춤, 메달, 기록
 e2e/          # Playwright: flow / journeys(나가기·돌아오기) / responsive(뷰포트 12종)
 ```
 

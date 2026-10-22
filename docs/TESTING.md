@@ -18,7 +18,8 @@
 | `e2e/helpers.ts` | `openNewGame`, `startGame`, `placeOneCorrect`, `solveAll`(저장소의 정답 사용), `timerText`, `expectFitsViewport` |
 | `e2e/flow.spec.ts` | 시작하기/멈춤/모드 전환 확인/난이도 변경 확인/클리어→기록/도전 모드/키보드 |
 | `e2e/journeys.spec.ts` | **나갔다 들어오는 모든 경로**에서 기대 화면 (GAME_UX_GUIDE §2 표와 1:1) |
-| `e2e/responsive.spec.ts` | 뷰포트 12종 × 모드별: 가로 스크롤 없음, 버튼이 화면 안, 보드 칸 ≥30px, 카드 ≥40px, 세로는 보드가 폭을 채움, 가로는 카드가 보드 오른쪽. 클리어 창·기록 화면도 검사. 스크린샷을 `test-results/`에 남김 |
+| `e2e/quick-math.spec.ts` + `math-helpers.ts` | 빠른 계산: 메뉴·시작·정답/오답/정답 공개·20문제 완주·60초 종료(`page.clock`)·방식 전환·나가기/돌아오기·키보드 |
+| `e2e/responsive.spec.ts` | 뷰포트 12종 × 게임·모드별: 가로 스크롤 없음, 버튼이 화면 안(스크롤 영역 안은 허용), 보드 칸 ≥30px, 카드 ≥40px, 세로는 보드가 폭을 채움, 가로는 카드가 보드 오른쪽. 클리어 창·기록 화면도 검사. 스크린샷을 `test-results/`에 남김 |
 
 ### 뷰포트 목록 (responsive.spec.ts)
 
@@ -32,4 +33,5 @@
 3. 접근 가능한 이름(role + name)으로 찾는다 → 버튼에 `aria-label`을 붙이는 습관.
 4. 테스트가 통과해도 **스크린샷을 눈으로 본다** (겹침·잘림·어색한 빈 공간은 숫자 검사로 안 잡힌다).
    여러 장을 한 번에 보려면 스크린샷을 모은 HTML을 만들어 한 장으로 캡처한다.
-5. 저장소를 지우기 전에 게임을 멈춘다 (진행 중 타이머가 다시 써 버림). 지운 뒤에는 `page.reload()`.
+5. 시간 제한 흐름(60초 등)은 `page.clock.install()` 후 `page.clock.runFor(ms)`로 기다리지 않고 검사한다.
+6. 저장소를 지우기 전에 게임을 멈춘다 (진행 중 타이머가 다시 써 버림). 지운 뒤에는 `page.reload()`.

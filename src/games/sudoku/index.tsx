@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
+import { useAutoPause, useGameClock } from '@/shared/game/hooks';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
 import { hasProgress, useSudoku } from './store';
@@ -16,21 +17,6 @@ import styles from './ui/Sudoku.module.css';
 
 /** 도전 모드 힌트 개수. 쉬운 모드는 무제한. */
 const CHALLENGE_HINTS = 3;
-
-function useTimer(running: boolean) {
-  const tick = useSudoku((s) => s.tick);
-  const last = useRef(0);
-  useEffect(() => {
-    if (!running) return;
-    last.current = performance.now();
-    const id = setInterval(() => {
-      const now = performance.now();
-      if (document.visibilityState === 'visible') tick(now - last.current);
-      last.current = now;
-    }, 250);
-    return () => clearInterval(id);
-  }, [running, tick]);
-}
 
 function useKeyboard(enabled: boolean, maxHints: number) {
   useEffect(() => {
@@ -61,21 +47,6 @@ function useKeyboard(enabled: boolean, maxHints: number) {
   }, [enabled, maxHints]);
 }
 
-/** 화면을 떠나거나 앱을 내리면 자동으로 멈춤 → 돌아오면 "계속하기"로 다시 시작 */
-function useAutoPause(picking: boolean) {
-  useEffect(() => {
-    const onVisibility = () => document.visibilityState === 'hidden' && useSudoku.getState().pause();
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
-      useSudoku.getState().pause();
-    };
-  }, []);
-  useEffect(() => {
-    if (picking) useSudoku.getState().pause();
-  }, [picking]);
-}
-
 function Play() {
   const game = useSudoku((s) => s.game);
   const paused = useSudoku((s) => s.paused);
@@ -101,8 +72,8 @@ function Play() {
   const live = !picking && game?.status === 'playing' && !paused;
   const asking = useLeaveAsking();
   useLeaveGuard(!picking && hasProgress(game), markQuit);
-  useAutoPause(picking);
-  useTimer(live && !asking);
+  useAutoPause(useSudoku.getState().pause, picking);
+  useGameClock(live && !asking, useSudoku.getState().tick);
   useKeyboard(live && !asking, maxHints);
 
   if (picking || !game) {
