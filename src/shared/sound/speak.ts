@@ -37,18 +37,28 @@ export function useCanSpeakKorean() {
   return sound && ready;
 }
 
+/**
+ * 남성 한국어 음성 (기기에 있을 때만). 이름으로 찾는다:
+ * Windows/Edge InJoon, 애플 Minsu, 안드로이드 구글 TTS ko-kr-x-koc/kod, 삼성 "남성".
+ */
+const MALE = /injoon|minsu|male|남성|남자|ko-kr-x-ko[cd]/i;
+function maleVoice() {
+  const voices = window.speechSynthesis?.getVoices() ?? [];
+  return voices.find((v) => v.lang.toLowerCase().startsWith('ko') && MALE.test(`${v.name} ${v.voiceURI}`)) ?? null;
+}
+
 export function canSpeak() {
   return typeof window !== 'undefined' && !!window.speechSynthesis;
 }
 
-export function speak(text: string, opts: { rate?: number; pitch?: number } = {}) {
+export function speak(text: string, opts: { rate?: number; pitch?: number; male?: boolean } = {}) {
   if (!useSettings.getState().sound || !canSpeak()) return;
   try {
     const synth = window.speechSynthesis;
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
-    const v = voice();
+    const v = (opts.male && maleVoice()) || voice();
     if (v) u.voice = v;
     u.rate = opts.rate ?? 0.9;
     u.pitch = opts.pitch ?? 1.1;

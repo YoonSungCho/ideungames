@@ -268,3 +268,24 @@ test('새 지역이 중간에 생겨도 이미 놀던 문장 하늘은 잠기지
   await expect(region(page, 6, '반대말 다리')).toBeEnabled();
   await expect(region(page, 7, '문장 하늘')).toBeEnabled();
 });
+
+test('이야기 장면: 마왕 대사는 아주 낮고 느린 목소리로 읽는다', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __utter: { text: string; pitch: number; rate: number }[] };
+    w.__utter = [];
+    window.speechSynthesis.speak = (u: SpeechSynthesisUtterance) => void w.__utter.push({ text: u.text, pitch: u.pitch, rate: u.rate });
+  });
+  await seed(page, { prologueSeen: false });
+  await page.goto(GAME);
+  const story = page.getByRole('dialog', { name: '프롤로그' });
+  await story.getByRole('button', { name: '다음 ▶' }).click(); // 뒤죽: "흥! 글자들이…"
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __utter: { text: string }[] }).__utter.some((u) => u.text.includes('재미없어'))))
+    .toBe(true);
+  const lines = await page.evaluate(() => (window as unknown as { __utter: { text: string; pitch: number; rate: number }[] }).__utter);
+  const villain = lines.find((u) => u.text.includes('재미없어'))!;
+  const narrator = lines.find((u) => u.text.includes('한글 나라'))!;
+  expect(villain.pitch).toBeLessThan(0.6);
+  expect(villain.pitch).toBeLessThan(narrator.pitch);
+  expect(villain.rate).toBeLessThan(narrator.rate);
+});
