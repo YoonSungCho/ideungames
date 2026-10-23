@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './helpers';
 import { answerCurrent, openMath } from './math-helpers';
 import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
+import { drop, openRain, popOne, seedRain } from './rain-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -162,5 +163,63 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
 
     await page.goto(`${GAME}/book`);
     await expectFitsViewport(page);
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`숫자 비 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/number-rain');
+    await expect(page.getByRole('radiogroup', { name: '모드 고르기' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-rain-menu.png`) });
+
+    await openRain(page, '두 자리 계산');
+    await page.getByRole('button', { name: '▶ 시작하기' }).click();
+    await popOne(page);
+    // 여러 모습의 물방울을 한 화면에 (보통·폭탄·얼음·하트·그림·두 줄)
+    await seedRain(page, {
+      spawnIn: 999_999, nextId: 5000, lives: 2, score: 12, combo: 4,
+      drops: [
+        drop(57, { q: { face: { t: 'text', text: '45 + 12' }, answer: 57 }, x: 0.125, y: 0.85 }),
+        drop(8, { q: { face: { t: 'count', emoji: '🍎', n: 8 }, answer: 8 }, x: 0.375, y: 0.55 }),
+        drop(34, { q: { face: { t: 'lines', lines: ['10이 3개', '1이 4개'] }, answer: 34 }, x: 0.625, y: 0.7 }),
+        drop(96, { q: { face: { t: 'text', text: '구십육' }, answer: 96 }, kind: 'bomb', x: 0.875, y: 0.45 }),
+        drop(21, { q: { face: { t: 'text', text: '3 × 7' }, answer: 21 }, kind: 'ice', x: 0.375, y: 0.18 }),
+        drop(60, { q: { face: { t: 'text', text: '72 − 12' }, answer: 60 }, kind: 'heart', x: 0.875, y: 0.15 }),
+      ],
+    });
+    await page.getByRole('button', { name: '▶ 계속하기' }).click();
+    await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: '5', exact: true }).click();
+    await page.waitForTimeout(300); // 가림막 흐림이 걷히는 동안
+    await expectFitsViewport(page);
+
+    const field = (await page.locator('[data-field]').boundingBox())!;
+    for (const d of await page.locator('[data-answer]').all()) {
+      const b = (await d.boundingBox())!;
+      // 물방울은 하늘 안에서 잘리지 않고, 옆 줄과 겹치지 않을 만큼 좁다
+      expect(b.x, '물방울 왼쪽').toBeGreaterThanOrEqual(field.x - 1);
+      expect(b.x + b.width, '물방울 오른쪽').toBeLessThanOrEqual(field.x + field.width + 1);
+      expect(b.width, '물방울 폭').toBeLessThanOrEqual(field.width / 4 + 1);
+      expect(b.height, '물방울 높이').toBeGreaterThanOrEqual(30);
+    }
+    const k = (await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: '5', exact: true }).boundingBox())!;
+    expect(Math.min(k.width, k.height), '패드 키 크기').toBeGreaterThanOrEqual(36);
+    if (width > height && width >= 560) {
+      expect(k.x, '패드는 하늘 오른쪽').toBeGreaterThan(field.x + field.width);
+      expect(field.height, '가로 화면 하늘 높이').toBeGreaterThanOrEqual(height * 0.7);
+    } else {
+      // 세로: 하늘이 화면 대부분 (패드는 2줄로 낮게)
+      expect(field.height, '세로 화면 하늘 높이').toBeGreaterThanOrEqual(height * 0.5);
+    }
+    await page.screenshot({ path: info.outputPath(`${name}-rain-play.png`) });
+
+    await page.goto('./#/games/number-rain/records');
+    await expect(page.getByRole('radiogroup', { name: '모드' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-rain-records.png`) });
   });
 }
