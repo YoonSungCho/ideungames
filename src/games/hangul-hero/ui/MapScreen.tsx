@@ -1,15 +1,16 @@
 import { Link, useNavigate } from 'react-router';
 import { REGIONS } from '../data/regions';
 import { PROLOGUE } from '../data/story';
+import { OPPOSITES } from '../data/opposites';
 import { WORDS } from '../data/words';
 import { isRegionOpen, regionProgress, totalStars, useHangulHero } from '../store';
 import { Cutscene } from './Cutscene';
 import { Hero, Imp } from './characters';
 import styles from './HangulHero.module.css';
 
-const TOTAL_PIECES = 14 + 10 + WORDS.length;
+const TOTAL_PIECES = 14 + 10 + WORDS.length + OPPOSITES.length;
 
-/** 모험 지도: 6개 지역이 길로 이어져 있다. 되찾은 지역은 제 색으로 빛난다. */
+/** 모험 지도: 지역들이 길로 이어져 있다. 되찾은 지역은 제 색으로 빛난다. */
 export function MapScreen() {
   const progress = useHangulHero((s) => s.progress);
   const pieces = useHangulHero((s) => s.pieces.length);

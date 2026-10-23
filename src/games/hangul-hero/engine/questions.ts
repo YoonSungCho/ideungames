@@ -1,4 +1,5 @@
 import { WORDS, FIRST_SOUND, FIRST_VOWEL, SENTENCES, wordByText } from '../data/words';
+import { OPPOSITES } from '../data/opposites';
 import { CONSONANTS, VOWELS, LOOKALIKE, compose, decompose, hasBatchim, consonantName, vowelSay } from './hangul';
 import type { ChoiceQuestion, Question, QuestionType } from './types';
 
@@ -138,7 +139,9 @@ function pictureWord(rng: Rng, n: number): ChoiceQuestion {
   const w = pick(rng, multiSyllable);
   // 비슷한 낱말(같은 글자로 시작하거나 길이가 같은 것)을 오답으로
   const similar = multiSyllable.filter((x) => x.word !== w.word && (x.word[0] === w.word[0] || x.word.at(-1) === w.word.at(-1))).map((x) => x.word);
-  const pool = multiSyllable.filter((x) => x.word.length === w.word.length).map((x) => x.word);
+  // 길이가 같은 낱말을 오답으로 (모자라면 한 글자 차이까지)
+  const sameLen = multiSyllable.filter((x) => x.word.length === w.word.length).map((x) => x.word);
+  const pool = sameLen.length > n + 2 ? sameLen : multiSyllable.filter((x) => Math.abs(x.word.length - w.word.length) <= 1).map((x) => x.word);
   const options = withDistractors(rng, w.word, pool, n, similar);
   return {
     id: qid(), kind: 'choice', optionSize: 'word',
@@ -184,6 +187,37 @@ function sentenceOrder(rng: Rng): Question {
   };
 }
 
+const isNoun = (w: string) => !w.endsWith('다');
+
+/** 크다 ↔ ? : 반대말 고르기 (오답은 다른 짝의 말 중 같은 꼴 — 낱말이면 낱말, 움직임·모양이면 그것) */
+function oppositePick(rng: Rng, n: number): ChoiceQuestion {
+  const o = pick(rng, OPPOSITES);
+  const flip = rng() < 0.5;
+  const [shown, answer, es, ea] = flip ? [o.b, o.a, o.eb, o.ea] : [o.a, o.b, o.ea, o.eb];
+  const others = OPPOSITES.filter((x) => x !== o && (!o.group || x.group !== o.group)).flatMap((x) => [x.a, x.b]);
+  const options = withDistractors(rng, answer, others, n, others.filter((w) => isNoun(w) === isNoun(answer)));
+  return {
+    id: qid(), kind: 'choice', optionSize: 'word',
+    prompt: { emoji: `${es} ↔ ${ea}`, big: `${shown} ↔ ?`, ask: '반대말을 찾아 줘!', say: shown },
+    options, answer, optionSay: sayMap(options, (x) => x), pieces: [`o:${o.a}`],
+  };
+}
+
+/** 코끼리는 커요. 개미는 ___ : 반대말로 문장 채우기 (보기는 정답과 앞 문장의 말, 둘 중 하나) */
+function oppositeSentence(rng: Rng): ChoiceQuestion {
+  const o = pick(rng, OPPOSITES);
+  const flip = rng() < 0.5;
+  const [first, firstEmoji, second, secondEmoji, answer, other] = flip
+    ? [o.sb, o.eb, o.sa, o.ea, o.ya, o.yb]
+    : [o.sa, o.ea, o.sb, o.eb, o.yb, o.ya];
+  const options = shuffle(rng, [answer, other]);
+  return {
+    id: qid(), kind: 'choice', optionSize: 'word',
+    prompt: { emoji: `${firstEmoji} ↔ ${secondEmoji}`, big: `${first}.\n${second.replace(answer, '___')}.`, ask: '반대말로 빈칸을 채워 줘!', say: first },
+    options, answer, optionSay: sayMap(options, (x) => x), pieces: [`o:${o.a}`],
+  };
+}
+
 export function makeQuestion(type: QuestionType, rng: Rng, options = 4): Question {
   switch (type) {
     case 'listenConsonant': return listenConsonant(rng, options);
@@ -198,6 +232,8 @@ export function makeQuestion(type: QuestionType, rng: Rng, options = 4): Questio
     case 'missingSyllable': return missingSyllable(rng, options);
     case 'sentenceBlank': return sentenceBlank(rng, Math.min(options, 3));
     case 'sentenceOrder': return sentenceOrder(rng);
+    case 'oppositePick': return oppositePick(rng, options);
+    case 'oppositeSentence': return oppositeSentence(rng);
   }
 }
 

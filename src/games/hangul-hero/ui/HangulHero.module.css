@@ -178,7 +178,7 @@
 .promptBody { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 16px; }
 .promptEmoji { font-size: clamp(3.6rem, 13dvh, 7rem); line-height: 1.1; }
 .promptBig { font-size: clamp(2.6rem, 9dvh, 5rem); line-height: 1.1; color: var(--text); }
-.promptSentence { font-size: clamp(1.4rem, 4.5dvh, 2.2rem); text-align: center; }
+.promptSentence { font-size: clamp(1.4rem, 4.5dvh, 2.2rem); text-align: center; white-space: pre-line; }
 .promptWord { font-size: clamp(1.8rem, 6dvh, 3rem); color: var(--text); }
 .revealMsg { margin: 0; padding: 6px 14px; border-radius: 99px; background: #dcf7e4; color: #138a6b; font-size: 1.05rem; }
 .revealMsg b { font-weight: normal; font-size: 1.3em; }
@@ -195,7 +195,7 @@
 .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .opts3 { grid-template-columns: repeat(3, 1fr); }
 .wordOptions { grid-template-columns: 1fr; }
-.wordOptions.opts4 { grid-template-columns: repeat(2, 1fr); }
+.wordOptions.opts4, .wordOptions.opts2 { grid-template-columns: repeat(2, 1fr); }
 .option {
   font: inherit; cursor: pointer; color: var(--text);
   min-height: clamp(60px, 11dvh, 104px); padding: 6px; border-radius: 22px;
@@ -283,6 +283,7 @@
 .bookSection h2 small { color: var(--text-muted); font-size: 0.9rem; }
 .bookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
 .wordGrid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.oppGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .bookCell {
   font: inherit; display: grid; justify-items: center; gap: 2px; padding: 8px 4px; min-height: 56px;
   border: none; border-radius: 14px; background: var(--surface-2); color: #c9c3e0; font-size: 1.6rem;
@@ -333,3 +334,8 @@
   .promptEmoji { font-size: clamp(3rem, 10dvh, 5rem); }
   .option { min-height: clamp(54px, 9dvh, 80px); }
 }
+
+/* 그림 두 개 짝(🐘 ↔ 🐜)은 한 줄로, 카드 폭에 맞춰 줄인다 (파일 끝: 화면별 크기보다 우선) */
+.promptCard { container-type: inline-size; }
+.promptPair { flex: 1 1 100%; text-align: center; white-space: nowrap; font-size: min(clamp(3rem, 11dvh, 6rem), 19cqw); }
+.promptPairText { white-space: nowrap; font-size: min(clamp(2.2rem, 8dvh, 4.4rem), 13cqw); }

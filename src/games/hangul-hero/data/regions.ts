@@ -71,6 +71,15 @@ export const REGIONS: Region[] = [
     boss: { types: ['pictureWord', 'missingSyllable'], options: 4 },
   },
   {
+    id: 'opposite', name: '반대말 다리', emoji: '🌉', color: '#e5679f', learn: '반대말 짝꿍', villain: 'bakjuk',
+    stages: [
+      { types: ['oppositePick'], options: 3 },
+      { types: ['oppositeSentence'], options: 2 },
+      { types: ['oppositePick', 'oppositeSentence'], options: 4 },
+    ],
+    boss: { types: ['oppositePick', 'oppositeSentence'], options: 4 },
+  },
+  {
     id: 'sky', name: '문장 하늘', emoji: '☁️', color: '#ffb703', learn: '짧은 문장', villain: 'both',
     stages: [
       { types: ['sentenceBlank'], options: 3 },

@@ -12,8 +12,8 @@ export interface Prompt {
   listenOnly?: boolean;
 }
 
-/** 맞히면 도감에 모이는 조각: c:ㄱ (자음), v:ㅏ (모음), w:사과 (낱말) */
-export type Piece = `c:${string}` | `v:${string}` | `w:${string}`;
+/** 맞히면 도감에 모이는 조각: c:ㄱ (자음), v:ㅏ (모음), w:사과 (낱말), o:크다 (반대말 짝꿍, 앞쪽 낱말로) */
+export type Piece = `c:${string}` | `v:${string}` | `w:${string}` | `o:${string}`;
 
 interface Base {
   id: string;
@@ -62,4 +62,6 @@ export type QuestionType =
   | 'pictureWord' // 🍎 → 사과/사자/수박
   | 'missingSyllable' // 🍎 사□ → 과
   | 'sentenceBlank' // 🐰🥕 토끼가 ___ 먹어요
-  | 'sentenceOrder'; // 어절 순서 맞추기
+  | 'sentenceOrder' // 어절 순서 맞추기
+  | 'oppositePick' // 크다 ↔ ? → 작다
+  | 'oppositeSentence'; // 코끼리는 커요. 개미는 ___ → 작아요 / 커요

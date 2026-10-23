@@ -81,7 +81,11 @@ export const bossMedal = (ms: number | undefined) => medalOf(BOSS_LIMITS, ms, 'l
 const emptyProgress = (): RegionProgress => ({ stars: [0, 0, 0], bossCleared: false, introSeen: false });
 
 export const regionProgress = (p: Record<string, RegionProgress>, id: string) => p[id] ?? emptyProgress();
-export const isRegionOpen = (p: Record<string, RegionProgress>, index: number) => index === 0 || regionProgress(p, REGIONS[index - 1].id).bossCleared;
+/** 앞 지역을 되찾으면 열린다. 새 지역이 중간에 끼어도 이미 놀던 지역은 계속 열어 둔다 */
+export const isRegionOpen = (p: Record<string, RegionProgress>, index: number) => {
+  const own = regionProgress(p, REGIONS[index].id);
+  return index === 0 || regionProgress(p, REGIONS[index - 1].id).bossCleared || own.bossCleared || own.stars.some((x) => x > 0);
+};
 export const isStageOpen = (p: RegionProgress, stage: StageId) => (stage === 'boss' ? p.stars[2] > 0 : stage === 0 || p.stars[stage - 1] > 0);
 export const totalStars = (p: Record<string, RegionProgress>) => REGIONS.reduce((n, r) => n + regionProgress(p, r.id).stars.reduce((a, b) => a + b, 0), 0);
 export const hasProgress = (s: Session | null) => s?.status === 'playing';

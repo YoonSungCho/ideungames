@@ -16,7 +16,8 @@ test('첫 방문: 프롤로그 → 지도, 첫 지역만 열려 있다', async (
   await expect(story).toBeHidden();
   await expect(region(page, 1, '자음 마을')).toBeEnabled();
   await expect(region(page, 2, '모음 바다')).toBeDisabled();
-  await expect(region(page, 6, '문장 하늘')).toBeDisabled();
+  await expect(region(page, 6, '반대말 다리')).toBeDisabled();
+  await expect(region(page, 7, '문장 하늘')).toBeDisabled();
   // 다시 들어와도 프롤로그는 또 나오지 않는다
   await page.reload();
   await expect(page.getByRole('dialog', { name: '프롤로그' })).toBeHidden();
@@ -137,7 +138,7 @@ test('글자 짓기·문장 순서를 화면에서 풀 수 있다', async ({ pag
   await solveCurrent(page);
   await solveCurrent(page);
 
-  await seed(page, { cleared: 5 });
+  await seed(page, { cleared: 6 });
   await page.goto(`${GAME}/sky`);
   await page.evaluate(() => {
     const k = 'ideun.hangul-hero';
@@ -154,7 +155,7 @@ test('글자 짓기·문장 순서를 화면에서 풀 수 있다', async ({ pag
 });
 
 test('마지막 보스 → 엔딩 → 도감에 한글 용사 인증서', async ({ page }) => {
-  await seed(page, { cleared: 5, staged: true });
+  await seed(page, { cleared: 6, staged: true });
   await page.goto(`${GAME}/sky`);
   await page.getByRole('button', { name: /^보스전/ }).click();
   await skipStory(page);
@@ -194,4 +195,76 @@ test('새로고침하면 진행 중 단계는 멈춤 → 계속하기', async ({
   await expect(page.getByRole('button', { name: '▶ 계속하기' })).toBeVisible();
   await page.getByRole('button', { name: '▶ 계속하기' }).click();
   await solveCurrent(page);
+});
+
+/** 읽어 준 말을 모아 둔다 (음성이 있든 없든) */
+const recordSpeech = (page: import('@playwright/test').Page) =>
+  page.addInitScript(() => {
+    const w = window as unknown as { __said: string[]; SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance };
+    w.__said = [];
+    const Orig = w.SpeechSynthesisUtterance;
+    w.SpeechSynthesisUtterance = class extends Orig {
+      constructor(text?: string) {
+        super(text);
+        w.__said.push(text ?? '');
+      }
+    };
+  });
+const said = (page: import('@playwright/test').Page) => page.evaluate(() => (window as unknown as { __said: string[] }).__said.splice(0));
+
+test('보기를 눌러도 보기 이름을 읽지 않고, 맞혀도 정답을 다시 읽지 않는다 (다음 문제만 읽어 줌)', async ({ page }) => {
+  await recordSpeech(page);
+  await seed(page);
+  await page.goto(`${GAME}/consonant`);
+  await page.getByRole('button', { name: /^1단계/ }).click();
+  await page.getByRole('button', { name: '▶ 시작하기' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBeGreaterThan(0);
+  await said(page); // 첫 문제 읽기
+  await chooseWrong(page);
+  await page.waitForTimeout(300);
+  expect(await said(page)).toEqual([]);
+  await solveCurrent(page);
+  const s = (await heroState(page)).session! as unknown as { questions: { prompt: { say?: string } }[] };
+  await expect.poll(async () => (await page.evaluate(() => (window as unknown as { __said: string[] }).__said)).length).toBeGreaterThan(0);
+  expect(await said(page)).toEqual([s.questions[1].prompt.say]);
+});
+
+test('반대말 다리: 숲 다음에 열리고, 반대말 고르기·문장 채우기를 풀면 도감에 짝꿍이 모인다', async ({ page }) => {
+  await seed(page, { cleared: 5, introSeen: false });
+  await page.goto(GAME);
+  await expect(region(page, 7, '문장 하늘')).toBeDisabled();
+  await region(page, 6, '반대말 다리').click();
+  await expect(page.getByRole('dialog', { name: '반대말 다리' })).toContainText('짝꿍');
+  await skipStory(page);
+  await page.getByRole('button', { name: /^1단계/ }).click();
+  await page.getByRole('button', { name: '▶ 시작하기' }).click();
+  await expect(page.getByText('반대말을 찾아 줘!')).toBeVisible();
+  await expect(page.getByRole('group', { name: '보기' }).getByRole('button')).toHaveCount(3);
+  await finishSession(page);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('1단계 성공');
+  await expect(dialog).toContainText('↔');
+  await dialog.getByRole('button', { name: '다음 단계 ▶' }).click();
+  await page.getByRole('button', { name: '▶ 시작하기' }).click();
+  await expect(page.getByText('반대말로 빈칸을 채워 줘!')).toBeVisible();
+  await expect(page.getByText(/___/)).toBeVisible();
+  await expect(page.getByRole('group', { name: '보기' }).getByRole('button')).toHaveCount(2);
+  await solveCurrent(page);
+  await page.goto(`${GAME}/book`);
+  await expect(page.getByRole('heading', { name: /반대말 짝꿍/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /↔/ }).first()).toBeEnabled();
+});
+
+test('새 지역이 중간에 생겨도 이미 놀던 문장 하늘은 잠기지 않는다', async ({ page }) => {
+  await seed(page, { cleared: 5 });
+  await page.goto('./manifest.webmanifest');
+  await page.evaluate(() => {
+    const k = 'ideun.hangul-hero';
+    const d = JSON.parse(localStorage.getItem(k)!);
+    d.state.progress.sky = { stars: [2, 0, 0], bossCleared: false, introSeen: true };
+    localStorage.setItem(k, JSON.stringify(d));
+  });
+  await page.goto(GAME);
+  await expect(region(page, 6, '반대말 다리')).toBeEnabled();
+  await expect(region(page, 7, '문장 하늘')).toBeEnabled();
 });

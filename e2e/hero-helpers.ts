@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 const KEY = 'ideun.hangul-hero';
 export const GAME = './#/games/hangul-hero';
-export const REGION_IDS = ['consonant', 'vowel', 'castle', 'cave', 'forest', 'sky'] as const;
+export const REGION_IDS = ['consonant', 'vowel', 'castle', 'cave', 'forest', 'opposite', 'sky'] as const;
 
 type Q = { kind: 'choice'; answer: string; options: string[] } | { kind: 'build'; answer: { cho: string; jung: string } } | { kind: 'order'; answer: string[]; tiles: string[] };
 

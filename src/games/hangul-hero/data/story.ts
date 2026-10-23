@@ -44,6 +44,11 @@ export const REGION_INTRO: Record<string, Line[]> = {
     { speaker: 'dwijuk', text: '사과가 사자고, 사자가 사과다~!' },
     { speaker: 'hero', text: '그림을 잘 보면 진짜 이름을 알 수 있어!' },
   ],
+  opposite: [
+    { speaker: 'bot', text: '반대말 다리에 왔어! 박죽이 낱말 짝꿍들의 손을 떼어 놓았어.' },
+    { speaker: 'bakjuk', text: '크다랑 작다, 빠르다랑 느리다… 짝꿍을 못 찾으면 다리는 영영 끊어진 채로야~!' },
+    { speaker: 'hero', text: '서로 반대인 말끼리 짝꿍이야! 다 찾아서 다리를 이을게!' },
+  ],
   sky: [
     { speaker: 'bot', text: '드디어 문장 하늘! 저 위 구름성에 뒤죽과 박죽이 있어.' },
     { speaker: 'bakjuk', text: '낱말은 찾았어도 문장은 못 만들걸?' },
@@ -58,6 +63,7 @@ export const BOSS_INTRO: Record<string, Line[]> = {
   castle: [{ speaker: 'dwijuk', text: '성벽을 와르르 무너뜨려 주지!' }, { speaker: 'hero', text: '한 글자씩 다시 쌓을 거야!' }],
   cave: [{ speaker: 'bakjuk', text: '받침은 전부 내 거야! 동굴 깊이 숨겨 버릴 테다!' }, { speaker: 'hero', text: '받침아, 돌아와!' }],
   forest: [{ speaker: 'dwijuk', text: '이름표를 몽땅 바꿔 붙이겠다!' }, { speaker: 'hero', text: '그림을 보면 다 알 수 있어!' }],
+  opposite: [{ speaker: 'bakjuk', text: '반대로, 반대로~! 다리를 와장창 흔들어 주마!' }, { speaker: 'hero', text: '짝꿍 낱말들아, 손을 꼭 잡아!' }],
   sky: [{ speaker: 'dwijuk', text: '둘이 함께라면 최강이다!' }, { speaker: 'bakjuk', text: '최강 회오리~!' }, { speaker: 'hero', text: '한글 붓아, 힘을 줘!' }],
 };
 
@@ -67,6 +73,7 @@ export const BOSS_WIN: Record<string, Line[]> = {
   castle: [{ speaker: 'dwijuk', text: '성이… 다시 튼튼해졌잖아!' }, { speaker: 'bot', text: '글자 성 완성! 대단해!' }],
   cave: [{ speaker: 'bakjuk', text: '받침들이 다 도망가 버렸어!' }, { speaker: 'bot', text: '동굴 안에 보석처럼 받침이 빛나!' }],
   forest: [{ speaker: 'dwijuk', text: '이름표가 다 제자리로 갔어…' }, { speaker: 'bot', text: '낱말 숲이 다시 푸르러졌어!' }],
+  opposite: [{ speaker: 'bakjuk', text: '짝꿍들이 다시 손을 잡았잖아…' }, { speaker: 'bot', text: '반대말 다리가 이어졌어! 이제 문장 하늘로 건너갈 수 있어!' }],
   sky: [],
 };
 

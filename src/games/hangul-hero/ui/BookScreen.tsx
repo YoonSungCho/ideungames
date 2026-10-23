@@ -2,6 +2,7 @@ import { callName } from '@/shared/korean';
 import { useSettings } from '@/shared/settings/store';
 import { speak } from '@/shared/sound/speak';
 import { REGIONS } from '../data/regions';
+import { OPPOSITES } from '../data/opposites';
 import { WORDS } from '../data/words';
 import { CONSONANTS, VOWELS } from '../engine/hangul';
 import { regionProgress, useHangulHero } from '../store';
@@ -56,6 +57,12 @@ export function BookScreen() {
         <h2>낱말 <small>{count('w', WORDS.map((w) => w.word))}/{WORDS.length}</small></h2>
         <div className={[styles.bookGrid, styles.wordGrid].join(' ')}>
           {WORDS.map((w) => <Cell key={w.word} id={`w:${w.word}`} label={w.word} say={w.word} emoji={w.emoji} />)}
+        </div>
+      </section>
+      <section className={styles.bookSection}>
+        <h2>반대말 짝꿍 <small>{count('o', OPPOSITES.map((o) => o.a))}/{OPPOSITES.length}</small></h2>
+        <div className={[styles.bookGrid, styles.wordGrid, styles.oppGrid].join(' ')}>
+          {OPPOSITES.map((o) => <Cell key={o.a} id={`o:${o.a}`} label={`${o.a} ↔ ${o.b}`} say={`${o.a}, ${o.b}`} emoji={`${o.ea}${o.eb}`} />)}
         </div>
       </section>
     </div>

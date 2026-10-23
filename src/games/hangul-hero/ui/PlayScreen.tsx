@@ -7,13 +7,14 @@ import { StartOverlay } from '@/shared/game/StartOverlay';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { callName } from '@/shared/korean';
 import { useSettings } from '@/shared/settings/store';
-import { speak } from '@/shared/sound/speak';
+import { speak, stopSpeaking } from '@/shared/sound/speak';
 import { Button } from '@/shared/ui/Button';
 import { Confetti } from '@/shared/ui/Confetti';
 import { HeaderSlot } from '@/shared/ui/HeaderSlot';
 import { ClockIcon } from '@/shared/ui/icons';
 import { Modal } from '@/shared/ui/Modal';
 import { Robot } from '@/shared/ui/Robot';
+import { OPPOSITES } from '../data/opposites';
 import { BOSS_HP, regionById, REGIONS } from '../data/regions';
 import { BOSS_INTRO, BOSS_WIN, ENDING } from '../data/story';
 import { jamoSay } from '../engine/hangul';
@@ -25,7 +26,12 @@ import { stageLabel } from './labels';
 import { AnswerArea, PromptCard } from './QuestionView';
 import styles from './HangulHero.module.css';
 
-const pieceLabel = (p: string) => p.slice(2);
+const pieceLabel = (p: string) => {
+  if (!p.startsWith('o:')) return p.slice(2);
+  const o = OPPOSITES.find((x) => x.a === p.slice(2));
+  return o ? `${o.a} ↔ ${o.b}` : p.slice(2);
+};
+const pieceSay = (p: string) => (p.startsWith('w:') ? pieceLabel(p) : p.startsWith('o:') ? pieceLabel(p).replace(' ↔ ', ', ') : jamoSay(pieceLabel(p)));
 const GAME = '/games/hangul-hero';
 
 function useKeyboard(enabled: boolean) {
@@ -139,7 +145,7 @@ function StageResult({ session, onNext, onRetry, onRegion }: { session: Session;
               <p>새로 찾은 한글 조각</p>
               <div>
                 {session.newPieces.slice(0, 12).map((p) => (
-                  <button key={p} onClick={() => speak(p.startsWith('w:') ? pieceLabel(p) : jamoSay(pieceLabel(p)))}>{pieceLabel(p)}</button>
+                  <button key={p} onClick={() => speak(pieceSay(p))}>{pieceLabel(p)}</button>
                 ))}
               </div>
             </div>
@@ -206,12 +212,12 @@ export function PlayScreen() {
   useGameClock(live && !asking, useHangulHero.getState().tick);
   useKeyboard(live && !asking);
 
-  // 맞히면 정답을 읽어 주고 잠시 뒤 다음 문제로
+  // 맞히면 잠시 뒤 다음 문제로
   useEffect(() => {
     if (!event || !valid) return;
     if (event.kind === 'correct' || event.kind === 'hit') {
-      const q = currentQuestion(session!);
-      speak(q.kind === 'choice' && q.optionSay?.[q.answer] ? q.optionSay[q.answer] : answerOf(q));
+      // 맞히면 효과음만 (정답을 음성으로 또 읽지 않는다)
+      stopSpeaking();
       const t = setTimeout(next, event.kind === 'hit' ? 900 : 750);
       return () => clearTimeout(t);
     }

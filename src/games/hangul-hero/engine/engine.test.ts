@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FIRST_SOUND, FIRST_VOWEL, SENTENCES, WORDS } from '../data/words';
 import { REGIONS } from '../data/regions';
+import { OPPOSITES } from '../data/opposites';
 import { compose, decompose, CONSONANTS, VOWELS } from './hangul';
 import { answerOf, makeQuestion, makeSet } from './questions';
 import type { QuestionType } from './types';
@@ -44,6 +45,21 @@ describe('낱말 데이터', () => {
     expect(new Set(WORDS.map((w) => w.word)).size).toBe(WORDS.length);
   });
 
+  it('그림이 겹치지 않고, 자음·모음마다 첫소리 낱말이 3개 이상', () => {
+    expect(new Set(WORDS.map((w) => w.emoji)).size).toBe(WORDS.length);
+    for (const c of CONSONANTS) expect(FIRST_SOUND[c.j]?.length ?? 0, c.j).toBeGreaterThanOrEqual(3);
+    for (const v of VOWELS) expect(FIRST_VOWEL[v.j]?.length ?? 0, v.j).toBeGreaterThanOrEqual(3);
+  });
+
+  it('반대말: 짝이 겹치지 않고, 문장 속에 그 말이 꼭 한 번 들어 있다', () => {
+    expect(new Set(OPPOSITES.flatMap((o) => [o.a, o.b])).size).toBe(OPPOSITES.length * 2);
+    for (const o of OPPOSITES) {
+      expect(o.sa.split(o.ya).length - 1, o.sa).toBe(1);
+      expect(o.sb.split(o.yb).length - 1, o.sb).toBe(1);
+      expect(o.sb.includes(o.ya), o.sb).toBe(false);
+    }
+  });
+
   it('문장 빈칸 오답은 정답과 다르다', () => {
     for (const s of SENTENCES) expect(s.wrong).not.toContain(s.words[s.blank]);
   });
@@ -59,7 +75,7 @@ describe('문제 생성', () => {
         if (q.kind === 'choice') {
           expect(q.options.filter((o) => o === q.answer)).toHaveLength(1);
           expect(new Set(q.options).size).toBe(q.options.length);
-          expect(q.options.length).toBeGreaterThanOrEqual(3);
+          expect(q.options.length).toBeGreaterThanOrEqual(type === 'oppositeSentence' ? 2 : 3);
         } else if (q.kind === 'build') {
           expect(q.cho).toContain(q.answer.cho);
           expect(q.jung).toContain(q.answer.jung);
@@ -80,6 +96,30 @@ describe('문제 생성', () => {
       if (q.kind !== 'choice') throw new Error();
       const w = q.prompt.say!;
       expect(decompose(w).jong).toBe(q.answer);
+    }
+  });
+
+  it('반대말 고르기: 정답은 보여준 말의 짝이고, 헷갈리는 같은 무리 말은 보기에 없다', () => {
+    const rng = seeded(5);
+    for (let i = 0; i < 200; i++) {
+      const q = makeQuestion('oppositePick', rng, 4);
+      if (q.kind !== 'choice') throw new Error();
+      const o = OPPOSITES.find((x) => x.a === q.prompt.say || x.b === q.prompt.say)!;
+      expect(q.answer).toBe(q.prompt.say === o.a ? o.b : o.a);
+      expect(q.options).not.toContain(q.prompt.say);
+      const kin = OPPOSITES.filter((x) => x !== o && o.group && x.group === o.group).flatMap((x) => [x.a, x.b]);
+      for (const k of kin) expect(q.options).not.toContain(k);
+    }
+  });
+
+  it('반대말 문장: 빈칸이 하나 있고 보기는 정답과 그 반대말', () => {
+    const rng = seeded(9);
+    for (let i = 0; i < 100; i++) {
+      const q = makeQuestion('oppositeSentence', rng, 4);
+      if (q.kind !== 'choice') throw new Error();
+      expect(q.prompt.big!.split('___')).toHaveLength(2);
+      expect(q.prompt.big).not.toContain(q.answer);
+      expect(q.options).toHaveLength(2);
     }
   });
 

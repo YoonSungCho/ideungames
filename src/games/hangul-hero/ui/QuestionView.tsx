@@ -27,8 +27,8 @@ export function PromptCard({ q, live, revealed }: { q: Question; live: boolean; 
         <span className={styles.promptBig} aria-label={`문제 ${say}`}>{say}</span>
       ) : (
         <div className={styles.promptBody}>
-          {q.prompt.emoji && <span className={styles.promptEmoji} aria-hidden>{q.prompt.emoji}</span>}
-          {q.prompt.big && <span className={[styles.promptBig, q.prompt.big.length > 6 && styles.promptSentence].filter(Boolean).join(' ')}>{q.prompt.big}</span>}
+          {q.prompt.emoji && <span className={[styles.promptEmoji, q.prompt.emoji.includes('↔') && styles.promptPair].filter(Boolean).join(' ')} aria-hidden>{q.prompt.emoji}</span>}
+          {q.prompt.big && <span className={[styles.promptBig, q.prompt.big.includes('↔') ? styles.promptPairText : q.prompt.big.length > 6 && styles.promptSentence].filter(Boolean).join(' ')}>{q.prompt.big}</span>}
           {say && !q.prompt.big && !voice && <span className={styles.promptWord}>{say}</span>}
           {say && voice && (
             <button className={styles.speakBtn} onClick={() => speak(say)} aria-label="소리 듣기">
@@ -71,10 +71,7 @@ export function AnswerArea() {
                 revealed && isAnswer && !session.solved && styles.optReveal,
                 revealed && !isAnswer && styles.optDim,
               ].filter(Boolean).join(' ')}
-              onClick={() => {
-                if (q.optionSay?.[o]) speak(q.optionSay[o]);
-                choose(o);
-              }}
+              onClick={() => choose(o)}
               aria-label={o}
             >
               {o}
