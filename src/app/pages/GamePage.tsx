@@ -22,7 +22,8 @@ export function GamePage() {
 
   return (
     <div className={styles.gamePage}>
-      <Header title={game.title} back backTo={rest ? gamePath : '/'} />
+      {/* ← 는 한 단계 위로: /games/x/a/b → /games/x/a → /games/x → 홈 */}
+      <Header title={game.title} back backTo={rest ? [gamePath, ...rest.split('/').filter(Boolean).slice(0, -1)].join('/') : '/'} />
       <Suspense
         fallback={
           <div className={styles.loading}>

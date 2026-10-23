@@ -6,12 +6,13 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 /** 게임 진행 중 다른 화면으로 나가려 하면 확인한다. 같은 게임 안의 화면·설정은 그냥 이동. */
 export function LeaveConfirm({ gamePath }: { gamePath: string }) {
   const active = useLeaveGuardStore((s) => s.active);
+  const guardWithinGame = useLeaveGuardStore((s) => s.guardWithinGame);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       active &&
       currentLocation.pathname !== nextLocation.pathname &&
       nextLocation.pathname !== '/settings' &&
-      !nextLocation.pathname.startsWith(gamePath),
+      (guardWithinGame || !nextLocation.pathname.startsWith(gamePath)),
   );
   const asking = blocker.state === 'blocked';
 

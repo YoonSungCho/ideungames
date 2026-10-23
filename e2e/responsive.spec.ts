@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './helpers';
 import { answerCurrent, openMath } from './math-helpers';
+import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -115,5 +116,51 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
       expect(k!.x, '패드는 문제 오른쪽').toBeGreaterThan(stage!.x + stage!.width);
     }
     await page.screenshot({ path: info.outputPath(`${name}-math-play.png`) });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`한글 용사 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await seed(page, { cleared: 2, staged: true, prologueSeen: false });
+    await page.goto(GAME);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-hero-story.png`) });
+    await skipStory(page);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-hero-map.png`) });
+
+    // 문제 유형별 화면 (보기·글자 짓기·문장 순서)
+    for (const [regionId, stage] of [['consonant', 0], ['castle', 1], ['sky', 1], ['forest', 0]] as const) {
+      await seed(page, { cleared: 5 });
+      await page.goto(`${GAME}/${regionId}`);
+      await page.evaluate(([r]) => {
+        const k = 'ideun.hangul-hero';
+        const d = JSON.parse(localStorage.getItem(k)!);
+        d.state.progress[r] = { stars: [3, 3, 3], bossCleared: false, introSeen: true };
+        localStorage.setItem(k, JSON.stringify(d));
+      }, [regionId]);
+      await page.reload();
+      await expectFitsViewport(page);
+      await page.getByRole('button', { name: new RegExp(`^${stage + 1}단계`) }).click();
+      await page.getByRole('button', { name: '▶ 시작하기' }).click();
+      await solveCurrent(page);
+      await expectFitsViewport(page);
+      await page.screenshot({ path: info.outputPath(`${name}-hero-${regionId}.png`) });
+    }
+
+    // 보스전
+    await seed(page, { staged: true });
+    await page.goto(`${GAME}/consonant`);
+    await page.getByRole('button', { name: /^보스전/ }).click();
+    await skipStory(page);
+    await page.getByRole('button', { name: '▶ 시작하기' }).click();
+    await solveCurrent(page);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-hero-boss.png`) });
+
+    await page.goto(`${GAME}/book`);
+    await expectFitsViewport(page);
   });
 }
