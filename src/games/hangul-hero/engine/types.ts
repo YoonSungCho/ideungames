@@ -64,4 +64,6 @@ export type QuestionType =
   | 'sentenceBlank' // 🐰🥕 토끼가 ___ 먹어요
   | 'sentenceOrder' // 어절 순서 맞추기
   | 'oppositePick' // 크다 ↔ ? → 작다
-  | 'oppositeSentence'; // 코끼리는 커요. 개미는 ___ → 작아요 / 커요
+  | 'oppositeSentence' // 코끼리는 커요. 개미는 ___ → 작아요 / 커요
+  | 'categoryPick' // 🍎 과일 → 자두 / 버스 / 연필 / 의자
+  | 'oddOneOut'; // 사과 · 포도 · 딸기 · 기차 → 기차

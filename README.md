@@ -32,7 +32,7 @@ src/
     types.ts          # GameManifest, 카테고리
     sudoku/           # 게임 1개 = 폴더 1개 (engine / store / records / ui)
     quick-math/       # 빠른 계산
-    hangul-hero/      # 한글 용사 (engine: 한글 조합·문제, data: 낱말 사전·반대말·지역·이야기 대본)
+    hangul-hero/      # 한글 용사 (engine: 한글 조합·문제, data: 낱말 사전(words 그림 430 + vocab 글자, 무리 21개)·문장·반대말·지역·이야기 대본)
   shared/game/  # 게임 공용: 시작하기 오버레이, 타이머·자동 멈춤, 메달, 기록
 e2e/          # Playwright: flow / journeys(나가기·돌아오기) / responsive(뷰포트 12종)
 ```

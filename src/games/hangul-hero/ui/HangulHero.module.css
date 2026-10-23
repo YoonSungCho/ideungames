@@ -283,6 +283,9 @@
 .bookSection h2 small { color: var(--text-muted); font-size: 0.9rem; }
 .bookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
 .wordGrid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.bookGroup { margin-top: 12px; }
+.bookGroup h3 { margin: 0 0 8px; font-size: 1rem; color: var(--text-muted); }
+.bookGroup h3 small { font-weight: 600; }
 .oppGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .bookCell {
   font: inherit; display: grid; justify-items: center; gap: 2px; padding: 8px 4px; min-height: 56px;
@@ -339,3 +342,5 @@
 .promptCard { container-type: inline-size; }
 .promptPair { flex: 1 1 100%; text-align: center; white-space: nowrap; font-size: min(clamp(3rem, 11dvh, 6rem), 19cqw); }
 .promptPairText { white-space: nowrap; font-size: min(clamp(2.2rem, 8dvh, 4.4rem), 13cqw); }
+/* 문장 문제: 높이·카드 폭 모두에 맞추고, 낱말 중간에서 줄바꿈하지 않는다 */
+.promptBig.promptSentence { font-size: min(clamp(1.2rem, 5.5dvh, 2.2rem), 6.5cqw); word-break: keep-all; }

@@ -1,4 +1,5 @@
-import { WORDS, FIRST_SOUND, FIRST_VOWEL, SENTENCES, wordByText } from '../data/words';
+import { WORDS, WORDS_BY_CATEGORY, FIRST_SOUND, FIRST_VOWEL, SENTENCES, wordByText } from '../data/words';
+import { CATEGORIES, farCategories, type Category } from '../data/categories';
 import { OPPOSITES } from '../data/opposites';
 import { CONSONANTS, VOWELS, LOOKALIKE, compose, decompose, hasBatchim, consonantName, vowelSay } from './hangul';
 import type { ChoiceQuestion, Question, QuestionType } from './types';
@@ -218,6 +219,36 @@ function oppositeSentence(rng: Rng): ChoiceQuestion {
   };
 }
 
+const PICTURE_WORDS = new Set(WORDS.map((w) => w.word));
+const pictureOf = (w: string) => (PICTURE_WORDS.has(w) ? ([`w:${w}`] as const) : []);
+const CATS = Object.keys(CATEGORIES) as Category[];
+const farWords = (cat: Category) => farCategories(cat).flatMap((c) => WORDS_BY_CATEGORY[c]);
+
+/** 🍎 과일 → 과일인 낱말 하나 고르기 (오답은 겹칠 일 없는 먼 무리에서) */
+function categoryPick(rng: Rng, n: number): ChoiceQuestion {
+  const cat = pick(rng, CATS);
+  const info = CATEGORIES[cat];
+  const answer = pick(rng, WORDS_BY_CATEGORY[cat]);
+  const options = withDistractors(rng, answer, farWords(cat), n);
+  return {
+    id: qid(), kind: 'choice', optionSize: 'word',
+    prompt: { emoji: info.emoji, big: info.name, ask: info.ask, say: info.name },
+    options, answer, optionSay: sayMap(options, (x) => x), pieces: [...pictureOf(answer)],
+  };
+}
+
+/** 셋은 같은 무리, 하나만 다른 무리 → 다른 하나 찾기 */
+function oddOneOut(rng: Rng): ChoiceQuestion {
+  const cat = pick(rng, CATS);
+  const same = shuffle(rng, WORDS_BY_CATEGORY[cat]).slice(0, 3);
+  const answer = pick(rng, farWords(cat));
+  return {
+    id: qid(), kind: 'choice', optionSize: 'word',
+    prompt: { emoji: '🔍', ask: '셋은 한 무리, 하나만 달라요. 다른 하나는?' },
+    options: shuffle(rng, [...same, answer]), answer, optionSay: sayMap([...same, answer], (x) => x), pieces: [...pictureOf(answer)],
+  };
+}
+
 export function makeQuestion(type: QuestionType, rng: Rng, options = 4): Question {
   switch (type) {
     case 'listenConsonant': return listenConsonant(rng, options);
@@ -234,6 +265,8 @@ export function makeQuestion(type: QuestionType, rng: Rng, options = 4): Questio
     case 'sentenceOrder': return sentenceOrder(rng);
     case 'oppositePick': return oppositePick(rng, options);
     case 'oppositeSentence': return oppositeSentence(rng);
+    case 'categoryPick': return categoryPick(rng, options);
+    case 'oddOneOut': return oddOneOut(rng);
   }
 }
 
@@ -245,7 +278,7 @@ export function makeSet(types: QuestionType[], count: number, rng: Rng, options 
     let q!: Question;
     for (let t = 0; t < 12; t++) {
       q = makeQuestion(types[i % types.length], rng, options);
-      const key = JSON.stringify([q.prompt.say, q.prompt.big, q.prompt.emoji]);
+      const key = JSON.stringify([q.prompt.say, q.prompt.big, q.prompt.emoji, answerOf(q)]);
       if (!seen.has(key)) {
         seen.add(key);
         break;

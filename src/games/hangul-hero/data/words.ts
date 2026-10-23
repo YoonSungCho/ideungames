@@ -1,4 +1,6 @@
 import { CONSONANTS, VOWELS, decompose } from '../engine/hangul';
+import type { Category } from './categories';
+import { VOCAB } from './vocab';
 
 /**
  * 낱말 그림 사전 — 이모지는 안드로이드·iOS 기본 글꼴에서 잘 보이는 것만, 낱말마다 그림이 겹치지 않게.
@@ -8,64 +10,75 @@ import { CONSONANTS, VOWELS, decompose } from '../engine/hangul';
 export interface Word {
   word: string;
   emoji: string;
+  cat: Category;
 }
 
-export const WORDS: Word[] = [
-  // 동물
-  { word: '사자', emoji: '🦁' }, { word: '하마', emoji: '🦛' }, { word: '오리', emoji: '🦆' }, { word: '거미', emoji: '🕷️' },
-  { word: '나비', emoji: '🦋' }, { word: '토끼', emoji: '🐰' }, { word: '여우', emoji: '🦊' }, { word: '코끼리', emoji: '🐘' },
-  { word: '곰', emoji: '🐻' }, { word: '양', emoji: '🐑' }, { word: '말', emoji: '🐴' }, { word: '뱀', emoji: '🐍' },
-  { word: '소', emoji: '🐄' }, { word: '새', emoji: '🐦' }, { word: '벌', emoji: '🐝' }, { word: '닭', emoji: '🐔' },
-  { word: '고양이', emoji: '🐱' }, { word: '강아지', emoji: '🐶' }, { word: '거북이', emoji: '🐢' }, { word: '원숭이', emoji: '🐒' },
-  { word: '호랑이', emoji: '🐯' }, { word: '기린', emoji: '🦒' }, { word: '펭귄', emoji: '🐧' }, { word: '문어', emoji: '🐙' },
-  { word: '고래', emoji: '🐋' }, { word: '상어', emoji: '🦈' }, { word: '물고기', emoji: '🐟' }, { word: '돼지', emoji: '🐷' },
-  { word: '판다', emoji: '🐼' }, { word: '낙타', emoji: '🐫' }, { word: '개구리', emoji: '🐸' }, { word: '다람쥐', emoji: '🐿️' },
-  { word: '달팽이', emoji: '🐌' }, { word: '독수리', emoji: '🦅' }, { word: '돌고래', emoji: '🐬' }, { word: '병아리', emoji: '🐤' },
-  { word: '모기', emoji: '🦟' }, { word: '캥거루', emoji: '🦘' }, { word: '표범', emoji: '🐆' }, { word: '오징어', emoji: '🦑' },
-  { word: '너구리', emoji: '🦝' }, { word: '부엉이', emoji: '🦉' }, { word: '쥐', emoji: '🐭' }, { word: '게', emoji: '🦀' },
-  { word: '공룡', emoji: '🦕' }, { word: '유니콘', emoji: '🦄' }, { word: '애벌레', emoji: '🐛' }, { word: '조개', emoji: '🐚' },
-  // 먹을 것
-  { word: '포도', emoji: '🍇' }, { word: '우유', emoji: '🥛' }, { word: '치즈', emoji: '🧀' }, { word: '피자', emoji: '🍕' },
-  { word: '고기', emoji: '🍖' }, { word: '바나나', emoji: '🍌' }, { word: '토마토', emoji: '🍅' }, { word: '가지', emoji: '🍆' },
-  { word: '사과', emoji: '🍎' }, { word: '주스', emoji: '🧃' }, { word: '밥', emoji: '🍚' }, { word: '빵', emoji: '🍞' },
-  { word: '귤', emoji: '🍊' }, { word: '꿀', emoji: '🍯' }, { word: '수박', emoji: '🍉' }, { word: '사탕', emoji: '🍬' },
-  { word: '딸기', emoji: '🍓' }, { word: '당근', emoji: '🥕' }, { word: '햄버거', emoji: '🍔' }, { word: '옥수수', emoji: '🌽' },
-  { word: '케이크', emoji: '🎂' }, { word: '라면', emoji: '🍜' }, { word: '레몬', emoji: '🍋' }, { word: '쿠키', emoji: '🍪' },
-  { word: '키위', emoji: '🥝' }, { word: '체리', emoji: '🍒' }, { word: '치킨', emoji: '🍗' }, { word: '초콜릿', emoji: '🍫' },
-  { word: '감자', emoji: '🥔' }, { word: '도넛', emoji: '🍩' }, { word: '버섯', emoji: '🍄' }, { word: '오이', emoji: '🥒' },
-  { word: '양파', emoji: '🧅' }, { word: '아이스크림', emoji: '🍦' }, { word: '핫도그', emoji: '🌭' }, { word: '호박', emoji: '🎃' },
-  { word: '요요', emoji: '🪀' }, { word: '약', emoji: '💊' }, { word: '밤', emoji: '🌰' }, { word: '파인애플', emoji: '🍍' },
-  { word: '복숭아', emoji: '🍑' }, { word: '달걀', emoji: '🥚' }, { word: '주먹밥', emoji: '🍙' }, { word: '수프', emoji: '🥣' },
-  // 탈것
-  { word: '기차', emoji: '🚂' }, { word: '버스', emoji: '🚌' }, { word: '요트', emoji: '⛵' }, { word: '자동차', emoji: '🚗' },
-  { word: '비행기', emoji: '✈️' }, { word: '트럭', emoji: '🚚' }, { word: '택시', emoji: '🚕' }, { word: '로켓', emoji: '🚀' },
-  { word: '자전거', emoji: '🚲' }, { word: '헬리콥터', emoji: '🚁' }, { word: '소방차', emoji: '🚒' }, { word: '구급차', emoji: '🚑' },
-  { word: '경찰차', emoji: '🚓' }, { word: '배', emoji: '🚢' }, { word: '오토바이', emoji: '🏍️' }, { word: '스쿠터', emoji: '🛴' },
-  // 물건
-  { word: '모자', emoji: '🧢' }, { word: '라디오', emoji: '📻' }, { word: '드럼', emoji: '🥁' }, { word: '시계', emoji: '⏰' },
-  { word: '구두', emoji: '👞' }, { word: '로봇', emoji: '🤖' }, { word: '책', emoji: '📚' }, { word: '공', emoji: '⚽' },
-  { word: '돈', emoji: '💰' }, { word: '종', emoji: '🔔' }, { word: '컵', emoji: '🥤' }, { word: '연필', emoji: '✏️' },
-  { word: '우산', emoji: '☂️' }, { word: '선물', emoji: '🎁' }, { word: '풍선', emoji: '🎈' }, { word: '리본', emoji: '🎀' },
-  { word: '카메라', emoji: '📷' }, { word: '피아노', emoji: '🎹' }, { word: '편지', emoji: '✉️' }, { word: '포크', emoji: '🍴' },
-  { word: '하트', emoji: '❤️' }, { word: '장갑', emoji: '🧤' }, { word: '지도', emoji: '🗺️' }, { word: '망치', emoji: '🔨' },
-  { word: '목도리', emoji: '🧣' }, { word: '바지', emoji: '👖' }, { word: '신발', emoji: '👟' }, { word: '숟가락', emoji: '🥄' },
-  { word: '안경', emoji: '👓' }, { word: '의자', emoji: '🪑' }, { word: '인형', emoji: '🧸' }, { word: '바이올린', emoji: '🎻' },
-  { word: '벽돌', emoji: '🧱' }, { word: '크레파스', emoji: '🖍️' }, { word: '휴지', emoji: '🧻' }, { word: '노트북', emoji: '💻' },
-  { word: '텐트', emoji: '⛺' }, { word: '가방', emoji: '🎒' }, { word: '열쇠', emoji: '🔑' }, { word: '가위', emoji: '✂️' },
-  { word: '양말', emoji: '🧦' }, { word: '치마', emoji: '👗' }, { word: '그림', emoji: '🖼️' }, { word: '전화기', emoji: '📞' },
-  { word: '마스크', emoji: '😷' }, { word: '촛불', emoji: '🕯️' }, { word: '왕관', emoji: '👑' }, { word: '기타', emoji: '🎸' },
-  // 자연·몸·놀이
-  { word: '나무', emoji: '🌳' }, { word: '바다', emoji: '🌊' }, { word: '달', emoji: '🌙' }, { word: '별', emoji: '⭐' },
-  { word: '물', emoji: '💧' }, { word: '불', emoji: '🔥' }, { word: '눈사람', emoji: '⛄' }, { word: '집', emoji: '🏠' },
-  { word: '문', emoji: '🚪' }, { word: '산', emoji: '⛰️' }, { word: '손', emoji: '✋' }, { word: '발', emoji: '🦶' },
-  { word: '아기', emoji: '👶' }, { word: '유령', emoji: '👻' }, { word: '야구', emoji: '⚾' }, { word: '해', emoji: '☀️' },
-  { word: '구름', emoji: '☁️' }, { word: '무지개', emoji: '🌈' }, { word: '지구', emoji: '🌍' }, { word: '해바라기', emoji: '🌻' },
-  { word: '튤립', emoji: '🌷' }, { word: '꽃', emoji: '🌸' }, { word: '야자수', emoji: '🌴' }, { word: '얼음', emoji: '🧊' },
-  { word: '코', emoji: '👃' }, { word: '귀', emoji: '👂' }, { word: '눈', emoji: '👀' }, { word: '이', emoji: '🦷' },
-  { word: '스키', emoji: '⛷️' }, { word: '탁구', emoji: '🏓' }, { word: '교회', emoji: '⛪' }, { word: '요정', emoji: '🧚' },
-  { word: '경찰', emoji: '👮' }, { word: '섬', emoji: '🏝️' }, { word: '탑', emoji: '🗼' }, { word: '번개', emoji: '⚡' },
-  { word: '화산', emoji: '🌋' }, { word: '선인장', emoji: '🌵' }, { word: '샤워', emoji: '🚿' }, { word: '사다리', emoji: '🪜' },
-];
+/** 무리별 그림 낱말: "낱말 그림, 낱말 그림, …" (이모지 13.0까지 — 갤럭시·아이폰 기본 글꼴에서 보이는 것만) */
+const PICTURES: Partial<Record<Category, string>> = {
+  animal: `사자 🦁, 하마 🦛, 오리 🦆, 거미 🕷️, 나비 🦋, 토끼 🐰, 여우 🦊, 코끼리 🐘, 곰 🐻, 양 🐑, 말 🐴, 뱀 🐍,
+    소 🐄, 새 🐦, 벌 🐝, 닭 🐔, 고양이 🐱, 강아지 🐶, 거북이 🐢, 원숭이 🐒, 호랑이 🐯, 기린 🦒, 펭귄 🐧, 문어 🐙,
+    고래 🐋, 상어 🦈, 물고기 🐟, 돼지 🐷, 판다 🐼, 낙타 🐫, 개구리 🐸, 다람쥐 🐿️, 달팽이 🐌, 독수리 🦅, 돌고래 🐬,
+    병아리 🐤, 모기 🦟, 캥거루 🦘, 표범 🐆, 오징어 🦑, 너구리 🦝, 부엉이 🦉, 쥐 🐭, 게 🦀, 공룡 🦕,
+    애벌레 🐛, 조개 🐚, 얼룩말 🦓, 고릴라 🦍, 코뿔소 🦏, 악어 🐊, 박쥐 🦇, 늑대 🐺, 사슴 🦌, 염소 🐐, 칠면조 🦃,
+    공작 🦚, 앵무새 🦜, 백조 🦢, 홍학 🦩, 비둘기 🕊️, 개미 🐜, 무당벌레 🐞, 전갈 🦂, 새우 🦐, 가재 🦞, 복어 🐡,
+    열대어 🐠, 수달 🦦, 나무늘보 🦥, 고슴도치 🦔, 라마 🦙, 코알라 🐨, 햄스터 🐹, 귀뚜라미 🦗, 지렁이 🪱, 파리 🪰,
+    딱정벌레 🪲, 비버 🦫, 물개 🦭, 들소 🦬, 매머드 🦣`,
+  plant: `나무 🌳, 해바라기 🌻, 튤립 🌷, 꽃 🌸, 야자수 🌴, 선인장 🌵, 장미 🌹, 클로버 🍀, 단풍잎 🍁, 새싹 🌱,
+    풀 🌿, 소나무 🌲, 벼 🌾, 무궁화 🌺, 통나무 🪵, 화분 🪴`,
+  weather: `눈사람 ⛄, 구름 ☁️, 무지개 🌈, 번개 ⚡, 눈송이 ❄️, 비 🌧️, 바람 🌬️, 회오리 🌪️, 안개 🌫️`,
+  land: `바다 🌊, 산 ⛰️, 섬 🏝️, 화산 🌋, 사막 🏜️, 돌 🪨, 불 🔥, 물 💧, 얼음 🧊`,
+  space: `달 🌙, 별 ⭐, 해 ☀️, 지구 🌍, 은하수 🌌, 혜성 ☄️, 토성 🪐, 로켓 🚀, 인공위성 🛰️, 비행접시 🛸`,
+  fruit: `포도 🍇, 바나나 🍌, 사과 🍎, 귤 🍊, 수박 🍉, 딸기 🍓, 레몬 🍋, 키위 🥝, 체리 🍒, 파인애플 🍍, 복숭아 🍑,
+    망고 🥭, 코코넛 🥥, 멜론 🍈, 블루베리 🫐, 아보카도 🥑`,
+  vegetable: `토마토 🍅, 가지 🍆, 당근 🥕, 옥수수 🌽, 감자 🥔, 오이 🥒, 양파 🧅, 마늘 🧄, 고추 🌶️, 브로콜리 🥦,
+    버섯 🍄, 고구마 🍠, 땅콩 🥜, 배추 🥬, 피망 🫑, 호박 🎃, 올리브 🫒`,
+  food: `우유 🥛, 치즈 🧀, 피자 🍕, 고기 🍖, 주스 🧃, 밥 🍚, 빵 🍞, 꿀 🍯, 사탕 🍬, 햄버거 🍔, 케이크 🎂, 라면 🍜,
+    쿠키 🍪, 치킨 🍗, 초콜릿 🍫, 도넛 🍩, 아이스크림 🍦, 핫도그 🌭, 달걀 🥚, 주먹밥 🍙, 수프 🥣, 밤 🌰,
+    샌드위치 🥪, 감자튀김 🍟, 팝콘 🍿, 와플 🧇, 팬케이크 🥞, 크루아상 🥐, 새우튀김 🍤, 초밥 🍣, 카레 🍛, 만두 🥟,
+    도시락 🍱, 소금 🧂, 버터 🧈, 어묵 🍢, 푸딩 🍮, 녹차 🍵, 빙수 🍧, 타코 🌮, 떡꼬치 🍡, 프레첼 🥨, 베이글 🥯`,
+  vehicle: `기차 🚂, 버스 🚌, 요트 ⛵, 자동차 🚗, 비행기 ✈️, 트럭 🚚, 택시 🚕, 자전거 🚲, 헬리콥터 🚁, 소방차 🚒,
+    구급차 🚑, 경찰차 🚓, 배 🚢, 오토바이 🏍️, 킥보드 🛴, 지하철 🚇, 트랙터 🚜, 경주차 🏎️, 보트 🚤, 카누 🛶,
+    케이블카 🚡, 낙하산 🪂, 픽업트럭 🛻`,
+  clothes: `모자 🧢, 구두 👞, 바지 👖, 운동화 👟, 장갑 🧤, 목도리 🧣, 양말 🧦, 원피스 👗, 안경 👓, 티셔츠 👕,
+    넥타이 👔, 외투 🧥, 수영복 🩱, 반지 💍, 왕관 👑, 장화 👢, 샌들 👡, 하이힐 👠, 선글라스 🕶️, 지갑 👛,
+    가방 🎒, 한복 👘, 리본 🎀, 슬리퍼 🩴, 반바지 🩳`,
+  body: `손 ✋, 발 🦶, 코 👃, 귀 👂, 눈 👀, 이 🦷, 입 👄, 혀 👅, 다리 🦵, 팔 💪, 뇌 🧠, 뼈 🦴, 손가락 👆, 엄지 👍`,
+  instrument: `드럼 🥁, 피아노 🎹, 바이올린 🎻, 기타 🎸, 트럼펫 🎺, 색소폰 🎷, 아코디언 🪗, 마이크 🎤, 종 🔔`,
+  school: `연필 ✏️, 책 📚, 크레파스 🖍️, 가위 ✂️, 공책 📓, 자 📏, 클립 📎, 압정 📌, 붓 🖌️, 볼펜 🖊️, 주판 🧮,
+    지구본 🌐, 삼각자 📐`,
+  home: `우산 ☂️, 시계 ⏰, 컵 🥤, 돈 💰, 선물 🎁, 카메라 📷, 편지 ✉️, 포크 🍴, 의자 🪑, 휴지 🧻, 노트북 💻, 열쇠 🔑,
+    전화기 📞, 마스크 😷, 촛불 🕯️, 그림 🖼️, 숟가락 🥄, 침대 🛏️, 소파 🛋️, 거울 🪞, 창문 🪟, 변기 🚽, 욕조 🛁,
+    비누 🧼, 칫솔 🪥, 빗자루 🧹, 바구니 🧺, 양동이 🪣, 전구 💡, 텔레비전 📺, 자물쇠 🔒, 컴퓨터 🖥️, 휴대폰 📱,
+    손전등 🔦, 건전지 🔋, 달력 📅, 상자 📦, 쓰레기통 🗑️, 약 💊, 반창고 🩹, 온도계 🌡️, 돋보기 🔍, 실 🧵,
+    털실 🧶, 문 🚪, 옷핀 🧷, 쥐덫 🪤, 접시 🍽️, 젖병 🍼`,
+  tool: `망치 🔨, 톱 🪚, 드라이버 🪛, 스패너 🔧, 도끼 🪓, 사다리 🪜, 자석 🧲, 갈고리 🪝, 톱니바퀴 ⚙️, 사슬 ⛓️,
+    벽돌 🧱, 나사 🔩`,
+  toy: `로봇 🤖, 인형 🧸, 공 ⚽, 요요 🪀, 연 🪁, 퍼즐 🧩, 주사위 🎲, 카드 🃏, 풍선 🎈, 요술봉 🪄,
+    물총 🔫, 스케이트보드 🛹`,
+  sport: `야구 ⚾, 스키 ⛷️, 탁구 🏓, 농구 🏀, 배구 🏐, 테니스 🎾, 골프 ⛳, 볼링 🎳, 수영 🏊, 썰매 🛷,
+    스케이트 ⛸️, 권투 🥊, 낚시 🎣, 서핑 🏄, 배드민턴 🏸, 럭비 🏉, 하키 🏑, 양궁 🏹, 승마 🏇, 역도 🏋️,
+    태권도 🥋, 사이클 🚴`,
+  people: `아기 👶, 경찰 👮, 할아버지 👴, 할머니 👵, 왕자 🤴, 공주 👸, 탐정 🕵️, 광대 🤡, 근위병 💂,
+    요리사 🧑‍🍳, 의사 🧑‍⚕️, 농부 🧑‍🌾, 선생님 🧑‍🏫, 군인 🪖`,
+  story: `요정 🧚, 유령 👻, 산타 🎅, 천사 👼, 마법사 🧙, 인어 🧜, 닌자 🥷, 유니콘 🦄, 용 🐉, 외계인 👽, 괴물 👹,
+    도깨비 👺, 해골 💀, 좀비 🧟, 흡혈귀 🧛, 지니 🧞`,
+  place: `집 🏠, 탑 🗼, 교회 ⛪, 학교 🏫, 병원 🏥, 성 🏰, 서커스 🎪, 공장 🏭, 우체국 🏣, 은행 🏦, 호텔 🏨,
+    편의점 🏪, 경기장 🏟️, 백화점 🏬, 절 🛕, 캠핑장 🏕️, 정류장 🚏, 놀이공원 🎡, 기차역 🚉`,
+};
+
+
+export const WORDS: Word[] = Object.entries(PICTURES).flatMap(([cat, list]) =>
+  list!.split(',').map((item) => {
+    const t = item.trim();
+    const sp = t.indexOf(' ');
+    return { word: t.slice(0, sp), emoji: t.slice(sp + 1).trim(), cat: cat as Category };
+  }),
+);
+
+/** 무리별 낱말 전체 (그림 낱말 + 글자 낱말) — 무리 짓기 문제용 */
+export const WORDS_BY_CATEGORY: Record<Category, string[]> = Object.fromEntries(
+  (Object.keys(VOCAB) as Category[]).map((c) => [c, [...WORDS.filter((w) => w.cat === c).map((w) => w.word), ...VOCAB[c]]]),
+) as Record<Category, string[]>;
 
 /** 기본 자음 14개 / 모음 10개 */
 const BASIC_C = new Set(CONSONANTS.map((c) => c.j));
@@ -86,52 +99,6 @@ export const FIRST_SOUND: Record<string, string[]> = groupBy((w) => decompose(w[
 /** 첫 글자 모음 문제용: 첫 글자의 모음이 기본 모음인 낱말 (ㅐ·ㅘ 같은 건 뺀다) */
 export const FIRST_VOWEL: Record<string, string[]> = groupBy((w) => decompose(w[0]).jung, BASIC_V);
 
-/** 문장 하늘: 그림 + 문장. blank는 빈칸으로 낼 어절 */
-export interface Sentence {
-  emoji: string;
-  words: string[];
-  blank: number;
-  /** 빈칸 오답 보기 — 그림을 보면 분명히 틀린 것만 */
-  wrong: string[];
-}
-
-export const SENTENCES: Sentence[] = [
-  { emoji: '🐰🥕', words: ['토끼가', '당근을', '먹어요'], blank: 1, wrong: ['우유를', '공을', '모자를'] },
-  { emoji: '🐱🥛', words: ['고양이가', '우유를', '마셔요'], blank: 1, wrong: ['당근을', '책을', '빵을'] },
-  { emoji: '🐶⚽', words: ['강아지가', '공을', '굴려요'], blank: 1, wrong: ['물을', '밥을', '꽃을'] },
-  { emoji: '🐦☁️', words: ['새가', '하늘을', '날아요'], blank: 2, wrong: ['먹어요', '자요', '울어요'] },
-  { emoji: '🐟💧', words: ['물고기가', '물에서', '헤엄쳐요'], blank: 2, wrong: ['날아요', '뛰어요', '먹어요'] },
-  { emoji: '👶💤', words: ['아기가', '쿨쿨', '자요'], blank: 2, wrong: ['먹어요', '날아요', '읽어요'] },
-  { emoji: '☀️✨', words: ['해가', '반짝반짝', '빛나요'], blank: 0, wrong: ['달이', '비가', '눈이'] },
-  { emoji: '🌧️☂️', words: ['비가', '주룩주룩', '와요'], blank: 0, wrong: ['해가', '별이', '꽃이'] },
-  { emoji: '🐻🍯', words: ['곰이', '꿀을', '먹어요'], blank: 1, wrong: ['공을', '물을', '책을'] },
-  { emoji: '🧒📚', words: ['나는', '책을', '읽어요'], blank: 1, wrong: ['밥을', '공을', '물을'] },
-  { emoji: '🐸🌊', words: ['개구리가', '폴짝', '뛰어요'], blank: 2, wrong: ['자요', '마셔요', '읽어요'] },
-  { emoji: '🌸🌱', words: ['꽃이', '예쁘게', '피었어요'], blank: 0, wrong: ['새가', '비가', '곰이'] },
-  { emoji: '🐔🥚', words: ['닭이', '알을', '낳아요'], blank: 1, wrong: ['공을', '책을', '꽃을'] },
-  { emoji: '🐝🌻', words: ['벌이', '꽃에', '앉아요'], blank: 0, wrong: ['곰이', '기차가', '고래가'] },
-  { emoji: '🚒🔥', words: ['소방차가', '불을', '꺼요'], blank: 1, wrong: ['밥을', '꽃을', '우유를'] },
-  { emoji: '🧒🪥', words: ['나는', '이를', '닦아요'], blank: 2, wrong: ['날아요', '마셔요', '짖어요'] },
-  { emoji: '🐶🦴', words: ['강아지가', '멍멍', '짖어요'], blank: 2, wrong: ['날아요', '헤엄쳐요', '읽어요'] },
-  { emoji: '🐒🍌', words: ['원숭이가', '바나나를', '먹어요'], blank: 1, wrong: ['당근을', '우유를', '꿀을'] },
-  { emoji: '✈️☁️', words: ['비행기가', '하늘을', '날아요'], blank: 0, wrong: ['기차가', '배가', '버스가'] },
-  { emoji: '🚂🛤️', words: ['기차가', '칙칙폭폭', '달려요'], blank: 0, wrong: ['비행기가', '배가', '물고기가'] },
-  { emoji: '🧒🎨', words: ['나는', '그림을', '그려요'], blank: 1, wrong: ['밥을', '우유를', '공을'] },
-  { emoji: '🐸🌧️', words: ['개구리가', '개굴개굴', '울어요'], blank: 1, wrong: ['멍멍', '음매', '꼬끼오'] },
-  { emoji: '🐓🌅', words: ['닭이', '꼬끼오', '울어요'], blank: 1, wrong: ['멍멍', '야옹', '음매'] },
-  { emoji: '🐱🧶', words: ['고양이가', '야옹', '울어요'], blank: 1, wrong: ['멍멍', '꼬끼오', '음매'] },
-  { emoji: '🐮🌾', words: ['소가', '음매', '울어요'], blank: 1, wrong: ['야옹', '꼬끼오', '개굴개굴'] },
-  { emoji: '🦁🌳', words: ['사자가', '어흥', '울어요'], blank: 1, wrong: ['멍멍', '야옹', '꼬끼오'] },
-  { emoji: '🌙⭐', words: ['밤하늘에', '별이', '반짝여요'], blank: 1, wrong: ['해가', '비가', '꽃이'] },
-  { emoji: '⛄❄️', words: ['하얀', '눈이', '펑펑', '와요'], blank: 1, wrong: ['해가', '꽃이', '달이'] },
-  { emoji: '🧒🚲', words: ['나는', '자전거를', '타요'], blank: 1, wrong: ['우유를', '책을', '사과를'] },
-  { emoji: '🎣🐟', words: ['아빠가', '물고기를', '잡아요'], blank: 1, wrong: ['구름을', '달을', '집을'] },
-  { emoji: '🐧❄️', words: ['펭귄이', '얼음 위를', '걸어요'], blank: 2, wrong: ['날아요', '마셔요', '읽어요'] },
-  { emoji: '🐿️🌰', words: ['다람쥐가', '밤을', '모아요'], blank: 1, wrong: ['우유를', '자동차를', '구름을'] },
-  { emoji: '🧒🍦', words: ['나는', '아이스크림을', '먹어요'], blank: 1, wrong: ['신발을', '연필을', '의자를'] },
-  { emoji: '🐌🌿', words: ['달팽이가', '느릿느릿', '기어가요'], blank: 0, wrong: ['비행기가', '로켓이', '토끼가'] },
-  { emoji: '🎂🕯️', words: ['생일', '케이크에', '촛불을', '켜요'], blank: 2, wrong: ['우산을', '양말을', '물고기를'] },
-  { emoji: '🧒🎈', words: ['풍선이', '하늘로', '둥실', '떠가요'], blank: 0, wrong: ['돌이', '의자가', '집이'] },
-];
+export { SENTENCES, type Sentence } from './sentences';
 
 export const wordByText = (w: string) => WORDS.find((x) => x.word === w)!;

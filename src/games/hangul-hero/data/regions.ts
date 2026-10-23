@@ -62,13 +62,13 @@ export const REGIONS: Region[] = [
     boss: { types: ['batchimRead', 'batchimPick'], options: 4 },
   },
   {
-    id: 'forest', name: '낱말 숲', emoji: '🌳', color: '#2ec4a0', learn: '낱말 읽기', villain: 'dwijuk',
+    id: 'forest', name: '낱말 숲', emoji: '🌳', color: '#2ec4a0', learn: '낱말 읽기·무리 짓기', villain: 'dwijuk',
     stages: [
       { types: ['pictureWord'], options: 3 },
       { types: ['missingSyllable'], options: 3 },
-      { types: ['pictureWord', 'missingSyllable'], options: 4 },
+      { types: ['categoryPick', 'oddOneOut'], options: 4 },
     ],
-    boss: { types: ['pictureWord', 'missingSyllable'], options: 4 },
+    boss: { types: ['pictureWord', 'categoryPick', 'missingSyllable', 'oddOneOut'], options: 4 },
   },
   {
     id: 'opposite', name: '반대말 다리', emoji: '🌉', color: '#e5679f', learn: '반대말 짝꿍', villain: 'bakjuk',

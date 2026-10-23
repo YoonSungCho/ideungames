@@ -42,6 +42,7 @@ export const REGION_INTRO: Record<string, Line[]> = {
   forest: [
     { speaker: 'bot', text: '낱말 숲의 나무 이름표가 뒤죽박죽 섞였어!' },
     { speaker: 'dwijuk', text: '사과가 사자고, 사자가 사과다~!' },
+    { speaker: 'bot', text: '과일은 과일끼리, 동물은 동물끼리! 낱말 무리도 다시 모아 줘야 해.' },
     { speaker: 'hero', text: '그림을 잘 보면 진짜 이름을 알 수 있어!' },
   ],
   opposite: [

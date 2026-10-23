@@ -132,7 +132,7 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.screenshot({ path: info.outputPath(`${name}-hero-map.png`) });
 
     // 문제 유형별 화면 (보기·글자 짓기·문장 순서)
-    for (const [regionId, stage] of [['consonant', 0], ['castle', 1], ['sky', 1], ['forest', 0], ['opposite', 0], ['opposite', 1]] as const) {
+    for (const [regionId, stage] of [['consonant', 0], ['castle', 1], ['sky', 1], ['forest', 0], ['opposite', 0], ['opposite', 1], ['forest', 2]] as const) {
       await seed(page, { cleared: 6 });
       await page.goto(`${GAME}/${regionId}`);
       await page.evaluate(([r]) => {

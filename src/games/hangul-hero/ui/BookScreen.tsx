@@ -2,6 +2,7 @@ import { callName } from '@/shared/korean';
 import { useSettings } from '@/shared/settings/store';
 import { speak } from '@/shared/sound/speak';
 import { REGIONS } from '../data/regions';
+import { CATEGORIES, type Category } from '../data/categories';
 import { OPPOSITES } from '../data/opposites';
 import { WORDS } from '../data/words';
 import { CONSONANTS, VOWELS } from '../engine/hangul';
@@ -55,9 +56,18 @@ export function BookScreen() {
       </section>
       <section className={styles.bookSection}>
         <h2>낱말 <small>{count('w', WORDS.map((w) => w.word))}/{WORDS.length}</small></h2>
-        <div className={[styles.bookGrid, styles.wordGrid].join(' ')}>
-          {WORDS.map((w) => <Cell key={w.word} id={`w:${w.word}`} label={w.word} say={w.word} emoji={w.emoji} />)}
-        </div>
+        {(Object.keys(CATEGORIES) as Category[]).map((c) => {
+          const list = WORDS.filter((w) => w.cat === c);
+          if (!list.length) return null;
+          return (
+            <div key={c} className={styles.bookGroup}>
+              <h3>{CATEGORIES[c].emoji} {CATEGORIES[c].name} <small>{count('w', list.map((w) => w.word))}/{list.length}</small></h3>
+              <div className={[styles.bookGrid, styles.wordGrid].join(' ')}>
+                {list.map((w) => <Cell key={w.word} id={`w:${w.word}`} label={w.word} say={w.word} emoji={w.emoji} />)}
+              </div>
+            </div>
+          );
+        })}
       </section>
       <section className={styles.bookSection}>
         <h2>반대말 짝꿍 <small>{count('o', OPPOSITES.map((o) => o.a))}/{OPPOSITES.length}</small></h2>

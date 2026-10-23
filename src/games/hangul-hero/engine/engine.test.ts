@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { FIRST_SOUND, FIRST_VOWEL, SENTENCES, WORDS } from '../data/words';
 import { REGIONS } from '../data/regions';
 import { OPPOSITES } from '../data/opposites';
+import { CATEGORIES, farCategories, type Category } from '../data/categories';
+import { VOCAB } from '../data/vocab';
+import { WORDS_BY_CATEGORY } from '../data/words';
 import { compose, decompose, CONSONANTS, VOWELS } from './hangul';
 import { answerOf, makeQuestion, makeSet } from './questions';
 import type { QuestionType } from './types';
@@ -49,6 +52,24 @@ describe('낱말 데이터', () => {
     expect(new Set(WORDS.map((w) => w.emoji)).size).toBe(WORDS.length);
     for (const c of CONSONANTS) expect(FIRST_SOUND[c.j]?.length ?? 0, c.j).toBeGreaterThanOrEqual(3);
     for (const v of VOWELS) expect(FIRST_VOWEL[v.j]?.length ?? 0, v.j).toBeGreaterThanOrEqual(3);
+  });
+
+  it('사전: 모든 낱말(그림+글자)이 한 무리에만 있고, 무리마다 8개 이상', () => {
+    const all = Object.values(WORDS_BY_CATEGORY).flat();
+    const dup = all.filter((w, i) => all.indexOf(w) !== i);
+    expect(dup).toEqual([]);
+    for (const w of WORDS) expect(w.word, w.word).not.toMatch(/\s/);
+    for (const [c, list] of Object.entries(WORDS_BY_CATEGORY)) expect(list.length, c).toBeGreaterThanOrEqual(8);
+    expect(Object.keys(VOCAB).sort()).toEqual(Object.keys(CATEGORIES).sort());
+    // 사전 규모 (줄어들면 알 수 있게)
+    expect(WORDS.length).toBeGreaterThanOrEqual(300);
+    expect(all.length).toBeGreaterThanOrEqual(1100);
+    expect(SENTENCES.length).toBeGreaterThanOrEqual(90);
+    expect(OPPOSITES.length).toBeGreaterThanOrEqual(50);
+  });
+
+  it('사전: 낱말은 한글로만 (띄어쓰기·영문 없음)', () => {
+    for (const w of Object.values(WORDS_BY_CATEGORY).flat()) expect(w, w).toMatch(/^[가-힣]+$/);
   });
 
   it('반대말: 짝이 겹치지 않고, 문장 속에 그 말이 꼭 한 번 들어 있다', () => {
@@ -120,6 +141,32 @@ describe('문제 생성', () => {
       expect(q.prompt.big!.split('___')).toHaveLength(2);
       expect(q.prompt.big).not.toContain(q.answer);
       expect(q.options).toHaveLength(2);
+    }
+  });
+
+  it('무리 고르기: 정답만 그 무리이고, 오답은 헷갈릴 일 없는 먼 무리', () => {
+    const rng = seeded(11);
+    const catOf = (w: string) => (Object.keys(WORDS_BY_CATEGORY) as Category[]).find((c) => WORDS_BY_CATEGORY[c].includes(w))!;
+    for (let i = 0; i < 300; i++) {
+      const q = makeQuestion('categoryPick', rng, 4);
+      if (q.kind !== 'choice') throw new Error();
+      const cat = (Object.keys(CATEGORIES) as Category[]).find((c) => CATEGORIES[c].name === q.prompt.big)!;
+      expect(catOf(q.answer)).toBe(cat);
+      for (const o of q.options.filter((x) => x !== q.answer)) expect(farCategories(cat)).toContain(catOf(o));
+    }
+  });
+
+  it('하나만 다른 것: 셋은 같은 무리, 정답 하나만 먼 무리', () => {
+    const rng = seeded(13);
+    const catOf = (w: string) => (Object.keys(WORDS_BY_CATEGORY) as Category[]).find((c) => WORDS_BY_CATEGORY[c].includes(w))!;
+    for (let i = 0; i < 300; i++) {
+      const q = makeQuestion('oddOneOut', rng, 4);
+      if (q.kind !== 'choice') throw new Error();
+      const rest = q.options.filter((x) => x !== q.answer);
+      expect(rest).toHaveLength(3);
+      const cat = catOf(rest[0]);
+      for (const r of rest) expect(catOf(r)).toBe(cat);
+      expect(farCategories(cat)).toContain(catOf(q.answer));
     }
   });
 

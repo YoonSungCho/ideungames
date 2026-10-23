@@ -289,3 +289,23 @@ test('이야기 장면: 마왕 대사는 아주 낮고 느린 목소리로 읽�
   expect(villain.pitch).toBeLessThan(narrator.pitch);
   expect(villain.rate).toBeLessThan(narrator.rate);
 });
+
+test('낱말 숲 3단계: 무리 고르기·하나만 다른 것 찾기를 끝까지 풀고, 도감은 무리별로 나뉜다', async ({ page }) => {
+  await seed(page, { cleared: 4 });
+  await page.evaluate(() => {
+    const k = 'ideun.hangul-hero';
+    const d = JSON.parse(localStorage.getItem(k)!);
+    d.state.progress.forest = { stars: [3, 3, 0], bossCleared: false, introSeen: true };
+    localStorage.setItem(k, JSON.stringify(d));
+  });
+  await page.goto(`${GAME}/forest`);
+  await page.getByRole('button', { name: /^3단계/ }).click();
+  await page.getByRole('button', { name: '▶ 시작하기' }).click();
+  await expect(page.getByText(/찾아 줘!|다른 하나는\?/).first()).toBeVisible();
+  await expect(page.getByRole('group', { name: '보기' }).getByRole('button')).toHaveCount(4);
+  await finishSession(page);
+  await expect(page.getByRole('dialog')).toContainText('3단계 성공');
+  await page.goto(`${GAME}/book`);
+  await expect(page.getByRole('heading', { name: /과일/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /탈것/ })).toBeVisible();
+});
