@@ -4,7 +4,8 @@ import { BLITZ_MS, currentProblem, recordKey, REVEAL_AFTER, SPRINT_COUNT, useQui
 const s = () => useQuickMath.getState();
 const answer = () => currentProblem(s().session!).answer;
 const type = (n: number) => String(n).split('').forEach((d) => s().typeDigit(Number(d)));
-const wrongOf = (n: number) => (n === 0 ? 1 : n === 99 ? 98 : n + 1);
+/** 정답과 자릿수가 같은 오답 (9 → 10처럼 자릿수가 늘면 한 자리씩 따로 채점돼 두 번 틀린 셈이 된다) */
+const wrongOf = (n: number) => (String(n + 1).length === String(n).length ? n + 1 : n - 1);
 
 describe('빠른 계산 스토어', () => {
   beforeEach(() => {
