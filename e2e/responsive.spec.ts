@@ -4,6 +4,7 @@ import { answerCurrent, openMath } from './math-helpers';
 import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 import { drop, openRain, popOne, seedRain } from './rain-helpers';
 import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir, tapTile } from './monster-helpers';
+import { cards, matchAll, matchPair, openMemory } from './memory-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -314,5 +315,51 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.waitForTimeout(2500);
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-mon-rain.png`) });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`짝꿍 카드 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/memory-cards');
+    await expect(page.getByRole('radiogroup', { name: '카드 그림' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-memory-menu.png`) });
+
+    for (const [level, rule] of [['hard', '그림과 글자'], ['easy', '같은 그림']] as const) {
+      await openMemory(page, { level, rule, theme: level === 'hard' ? '탈것' : '바다' });
+      await expectFitsViewport(page);
+      await page.getByRole('button', { name: '▶ 시작하기' }).click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: info.outputPath(`${name}-memory-peek-${level}.png`) });
+      await expect(page.getByText('잘 기억해 둬!')).toBeHidden({ timeout: 6000 });
+      await matchPair(page);
+      await page.waitForTimeout(700);
+      await expectFitsViewport(page);
+      const box = await cards(page).first().boundingBox();
+      // 카드는 손가락으로 누를 만큼 (24장일 때도)
+      expect(Math.min(box!.width, box!.height), '카드 크기').toBeGreaterThanOrEqual(level === 'hard' ? 44 : 60);
+      if (width > height && width >= 560) {
+        const status = await page.getByLabel('걸린 시간').boundingBox();
+        const last = await cards(page).last().boundingBox();
+        expect(status!.x, '상태는 카드판 오른쪽').toBeGreaterThan(last!.x + last!.width);
+      }
+      await page.screenshot({ path: info.outputPath(`${name}-memory-${level}.png`) });
+      if (level === 'easy') {
+        await matchAll(page);
+        await page.waitForTimeout(800);
+        await expectFitsViewport(page);
+        await page.screenshot({ path: info.outputPath(`${name}-memory-result.png`) });
+      } else {
+        await page.getByRole('button', { name: '잠깐 멈추기' }).click();
+        await page.evaluate(() => localStorage.removeItem('ideun.memory-cards'));
+      }
+    }
+    await page.goto('./#/games/memory-cards/records');
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-memory-records.png`) });
   });
 }

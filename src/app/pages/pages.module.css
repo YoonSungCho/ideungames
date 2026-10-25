@@ -41,7 +41,7 @@
 }
 .heroGear { position: absolute; top: 8px; right: 0; }
 
-.chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 16px; scrollbar-width: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 2px 16px; }
 .chip {
   flex: none; font: inherit; font-size: 1rem; border: none; cursor: pointer;
   padding: 8px 18px; border-radius: 999px; background: var(--surface); color: var(--text-muted); box-shadow: var(--shadow-sm);
