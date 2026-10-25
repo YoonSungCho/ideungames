@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canMove, distances, DIRS, generate, lineTo, neighbor, pathToGoal, slide, STAR_COUNT, xy } from './maze';
+import { canMove, distances, DIRS, generate, holdStep, lineTo, neighbor, pathBetween, pathToGoal, slide, STAR_COUNT, xy, type Dir } from './maze';
 import { createRng } from './rng';
 
 describe('미로 만들기', () => {
@@ -67,5 +67,54 @@ describe('움직이기', () => {
     const p = pathToGoal(m, m.start);
     expect(p[p.length - 1]).toBe(m.goal);
     expect(p.length).toBe(distances(m, m.start)[m.goal]);
+  });
+});
+
+describe('조이스틱·손가락 길', () => {
+  const m = generate(9, 9, createRng(11));
+  const OPP: Record<Dir, Dir> = { up: 'down', right: 'left', down: 'up', left: 'right' };
+  const exits = (i: number) => DIRS.filter((d) => canMove(m, i, d));
+
+  it('누른 쪽이 열려 있으면 그쪽, 꺾인 길이면 따라가고, 갈림길에서 막히면 멈춘다', () => {
+    for (let i = 0; i < m.walls.length; i++)
+      for (const came of exits(i)) {
+        const from = neighbor(m, i, came);
+        for (const d of DIRS) {
+          const r = holdStep(m, i, d, from);
+          if (canMove(m, i, d)) {
+            expect(r).toEqual({ cell: neighbor(m, i, d), dir: d });
+            continue;
+          }
+          const ways = exits(i).filter((x) => x !== came);
+          if (ways.length === 1 && ways[0] !== OPP[d]) expect(r).toEqual({ cell: neighbor(m, i, ways[0]), dir: ways[0] });
+          else expect(r).toBeNull();
+        }
+      }
+    // 처음(온 길 없음)엔 막힌 쪽으로 안 간다
+    const blocked = DIRS.find((d) => !canMove(m, m.start, d))!;
+    expect(holdStep(m, m.start, blocked, null)).toBeNull();
+  });
+
+  it('계속 누르고 있으면 길을 따라 멀리 가다가 언젠가 멈춘다 (빙빙 돌지 않음)', () => {
+    for (const d of DIRS) {
+      let pos = m.start;
+      let came: number | null = null;
+      let steps = 0;
+      for (; steps < 200; steps++) {
+        const r = holdStep(m, pos, d, came);
+        if (!r) break;
+        came = pos;
+        pos = r.cell;
+      }
+      expect(steps).toBeLessThan(200);
+    }
+  });
+
+  it('두 칸 사이 가장 짧은 길, 너무 멀면 null', () => {
+    const p = pathBetween(m, m.start, m.goal)!;
+    expect(p.length).toBe(distances(m, m.start)[m.goal]);
+    expect(p[p.length - 1]).toBe(m.goal);
+    expect(pathBetween(m, m.start, m.goal, p.length - 1)).toBeNull();
+    expect(pathBetween(m, 5, 5)).toEqual([]);
   });
 });

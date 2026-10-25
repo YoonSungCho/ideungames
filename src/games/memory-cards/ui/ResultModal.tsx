@@ -1,19 +1,62 @@
+import type { CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { formatTime } from '@/shared/format';
 import { MEDAL_ICON, MEDAL_LABEL, MEDALS } from '@/shared/game/medals';
-import { callName } from '@/shared/korean';
+import { callName, josa } from '@/shared/korean';
 import { useSettings } from '@/shared/settings/store';
 import { Button } from '@/shared/ui/Button';
 import { Confetti } from '@/shared/ui/Confetti';
 import { Modal } from '@/shared/ui/Modal';
 import { pairCount } from '../engine/deck';
 import { medalFor, nextMedalFor } from '../records';
-import { recordKey, useMemoryCards } from '../store';
-import { setupTitle } from './labels';
+import { isBattle, recordKey, useMemoryCards, type Session } from '../store';
+import { PLAYER_COLOR, players, setupTitle } from './labels';
 import styles from './Memory.module.css';
+
+/** 대결 결과: 이긴 사람 · 두 사람 점수 */
+function BattleResult({ session, onMenu }: { session: Session; onMenu: () => void }) {
+  const playerName = useSettings((s) => s.playerName);
+  const newGame = useMemoryCards((s) => s.newGame);
+  const navigate = useNavigate();
+  const who = players(session, playerName);
+  const [a, b] = session.scores;
+  const win = a === b ? null : a > b ? 0 : 1;
+  return (
+    <>
+      <Confetti />
+      <Modal open labelledBy="result-title">
+        <div className={styles.result}>
+          <div className={styles.resultMedal} aria-hidden>{win === null ? '🤝' : '🏆'}</div>
+          <h2 id="result-title">{win === null ? '비겼어! 둘 다 최고!' : `${who[win].name} 승리!`}</h2>
+          <p className={styles.resultSub}>{setupTitle(session)}</p>
+          <div className={styles.battleScore}>
+            {who.map((p, k) => (
+              <div key={k} className={[styles.battleSide, win === k && styles.battleWin].filter(Boolean).join(' ')} style={{ '--pc': PLAYER_COLOR[k] } as CSSProperties} aria-label={`${p.name} ${session.scores[k]}개`}>
+                <span className={styles.playerIcon}>{win === k ? '👑' : p.icon}</span>
+                <span>{p.name}</span>
+                <b>{session.scores[k]}</b>
+              </div>
+            ))}
+          </div>
+          <p className={styles.nextGoal}>{win === null ? '한 판 더 해서 승부를 내 볼까?' : `${josa(who[1 - win].name, '아/야')}, 다음엔 이길 수 있어!`}</p>
+          <div className={[styles.resultActions, styles.three].join(' ')}>
+            <Button size="lg" onClick={() => newGame(session)}>한 판 더!</Button>
+            <Button variant="secondary" onClick={onMenu}>카드 바꾸기</Button>
+            <Button variant="ghost" onClick={() => navigate('/')}>홈으로</Button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+}
 
 export function ResultModal({ onMenu }: { onMenu: () => void }) {
   const session = useMemoryCards((s) => s.session)!;
+  if (isBattle(session)) return <BattleResult session={session} onMenu={onMenu} />;
+  return <SoloResult session={session} onMenu={onMenu} />;
+}
+
+function SoloResult({ session, onMenu }: { session: Session; onMenu: () => void }) {
   const best = useMemoryCards((s) => s.records[recordKey(session)]?.best);
   const newGame = useMemoryCards((s) => s.newGame);
   const { playerName, mode } = useSettings();

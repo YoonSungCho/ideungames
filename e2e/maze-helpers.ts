@@ -21,7 +21,8 @@ export async function mazeState(page: Page) {
 export const LEVEL_NAMES = { tiny: '꼬마', easy: '쉬움', medium: '중간', hard: '어려움' } as const;
 type Dir = 'up' | 'right' | 'down' | 'left';
 const BIT: Record<Dir, number> = { up: 1, right: 2, down: 4, left: 8 };
-const DIR_NAME: Record<Dir, string> = { up: '위로', right: '오른쪽으로', down: '아래로', left: '왼쪽으로' };
+const KEY: Record<Dir, string> = { up: 'ArrowUp', right: 'ArrowRight', down: 'ArrowDown', left: 'ArrowLeft' };
+const OPP: Record<Dir, Dir> = { up: 'down', right: 'left', down: 'up', left: 'right' };
 
 export const step = (m: MazeSession['maze'], i: number, d: Dir) => i + (d === 'up' ? -m.w : d === 'down' ? m.w : d === 'right' ? 1 : -1);
 export const open = (m: MazeSession['maze'], i: number) => (Object.keys(BIT) as Dir[]).filter((d) => (m.walls[i] & BIT[d]) === 0);
@@ -67,19 +68,55 @@ export async function startMaze(page: Page, opts: Parameters<typeof openMaze>[1]
   await expect(page.getByRole('button', { name: '▶ 시작하기' })).toBeHidden();
 }
 
-export const dirBtn = (page: Page, d: Dir) => page.getByRole('group', { name: '방향 버튼' }).getByRole('button', { name: DIR_NAME[d], exact: true });
+/** 화살표 키로 한 칸 */
+export const press = (page: Page, d: Dir) => page.keyboard.press(KEY[d]);
 
-/** 방향 버튼으로 한 칸씩 걸어서 to까지 */
+/** 화살표 키로 한 칸씩 걸어서 to까지 */
 export async function walkTo(page: Page, to: number) {
   const s = (await mazeState(page)).session!;
-  for (const d of route(s.maze, s.pos, to)) await dirBtn(page, d).click();
+  for (const d of route(s.maze, s.pos, to)) await press(page, d);
   await expect.poll(async () => (await mazeState(page)).session!.pos).toBe(to);
 }
 
 export async function walkToGoal(page: Page) {
   const s = (await mazeState(page)).session!;
-  for (const d of route(s.maze, s.pos, s.maze.goal)) await dirBtn(page, d).click();
+  for (const d of route(s.maze, s.pos, s.maze.goal)) await press(page, d);
   await expect.poll(async () => (await mazeState(page)).session!.status).toBe('done');
+}
+
+export const joystick = (page: Page) => page.getByRole('group', { name: '조이스틱' });
+
+/** 조이스틱을 d쪽으로 누르고 있기 (ms 동안) */
+export async function holdJoystick(page: Page, d: Dir, ms: number) {
+  const box = (await joystick(page).boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const r = box.width * 0.4;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + (d === 'right' ? r : d === 'left' ? -r : 0), cy + (d === 'down' ? r : d === 'up' ? -r : 0), { steps: 3 });
+  await page.waitForTimeout(ms);
+  await page.mouse.up();
+}
+
+/** 조이스틱을 계속 누르고 있을 때 가는 칸들 (게임 규칙과 같게: 막히면 꺾인 길을 따라, 갈림길에서 멈춤) */
+export function holdPath(m: MazeSession['maze'], from: number, d: Dir, max = 50): number[] {
+  const path: number[] = [];
+  let pos = from;
+  let came: number | null = null;
+  for (let k = 0; k < max && pos !== m.goal; k++) {
+    let next: number | null = null;
+    if (open(m, pos).includes(d)) next = step(m, pos, d);
+    else if (came !== null) {
+      const ways = open(m, pos).filter((x) => step(m, pos, x) !== came);
+      if (ways.length === 1 && ways[0] !== OPP[d]) next = step(m, pos, ways[0]);
+    }
+    if (next === null) break;
+    came = pos;
+    pos = next;
+    path.push(pos);
+  }
+  return path;
 }
 
 /** 미로 칸의 화면 위치 (가운데) */

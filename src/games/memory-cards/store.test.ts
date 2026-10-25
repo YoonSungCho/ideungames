@@ -6,7 +6,7 @@ const partner = (i: number) => S().session!.cards.findIndex((c, k) => k !== i &&
 
 beforeEach(() => {
   useMemoryCards.setState({ records: {}, session: null });
-  S().newGame({ theme: 'animal', level: 'tiny', rule: 'same' });
+  S().newGame({ theme: 'animal', level: 'tiny', rule: 'same', players: 1 });
 });
 
 describe('한 판', () => {
@@ -57,5 +57,59 @@ describe('한 판', () => {
     expect(S().session!.open).toHaveLength(2);
     S().hideMiss();
     expect(S().session!.open).toEqual([]);
+  });
+});
+
+describe('둘이서 대결', () => {
+  const play = () => {
+    S().newGame({ level: 'easy', rule: 'same', players: 2, rival: 'mom' });
+    S().start();
+    S().tick(peekMs('easy'));
+  };
+  const stranger = (i: number) => S().session!.cards.findIndex((c, k) => k !== i && !S().session!.matched[k] && c.pair !== S().session!.cards[i].pair);
+
+  it('짝을 찾으면 내 점수가 오르고 한 번 더, 틀리면 상대 차례', () => {
+    play();
+    S().flipCard(0);
+    S().flipCard(partner(0));
+    expect(S().session).toMatchObject({ turn: 0, scores: [1, 0] });
+    const i = S().session!.matched.findIndex((m) => !m);
+    S().flipCard(i);
+    S().flipCard(stranger(i));
+    expect(S().session).toMatchObject({ turn: 1, scores: [1, 0] });
+    expect(S().event).toMatchObject({ kind: 'miss', turn: 1 });
+    S().hideMiss();
+    S().flipCard(i);
+    S().flipCard(partner(i));
+    expect(S().session).toMatchObject({ turn: 1, scores: [1, 1] });
+  });
+
+  it('다 찾으면 끝나지만 시간 기록은 남기지 않는다', () => {
+    play();
+    for (let i = 0; i < S().session!.cards.length; i++) {
+      if (S().session!.matched[i]) continue;
+      S().flipCard(i);
+      S().flipCard(partner(i));
+    }
+    expect(S().session).toMatchObject({ status: 'done', scores: [6, 0] });
+    expect(S().records).toEqual({});
+    // 한 판 더: 진 사람(엄마)이 먼저
+    S().newGame(S().session!);
+    expect(S().session).toMatchObject({ status: 'ready', turn: 1, scores: [0, 0] });
+  });
+});
+
+describe('계산식', () => {
+  it('짝을 찾으면 식과 답을 읽어 준다', () => {
+    S().newGame({ level: 'tiny', rule: 'math', players: 1 });
+    S().start();
+    S().tick(peekMs('tiny'));
+    S().flipCard(0);
+    S().flipCard(partner(0));
+    const c = S().session!.cards[0];
+    expect(S().event!.name).toMatch(/^\d+\+\d+=\d+$/);
+    expect(S().event!.say).toContain('더하기');
+    const [a, b] = c.sym.split('+').map(Number);
+    expect(a + b).toBe(Number(c.name));
   });
 });

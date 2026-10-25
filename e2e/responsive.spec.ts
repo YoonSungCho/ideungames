@@ -4,8 +4,8 @@ import { answerCurrent, openMath } from './math-helpers';
 import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 import { drop, openRain, popOne, seedRain } from './rain-helpers';
 import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir, tapTile } from './monster-helpers';
-import { cards, matchAll, matchPair, openMemory } from './memory-helpers';
-import { dirBtn, mazeState, openMaze, route, walkToGoal } from './maze-helpers';
+import { cards, matchAll, matchPair, missPair, openMemory, startMemory } from './memory-helpers';
+import { joystick, mazeState, openMaze, press, route, walkToGoal } from './maze-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -359,6 +359,27 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
         await page.evaluate(() => localStorage.removeItem('ideun.memory-cards'));
       }
     }
+    // 계산식 어려움 (24장, 식 글자가 카드 안에)
+    await startMemory(page, { level: 'hard', rule: '계산식' });
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-memory-math.png`) });
+    await page.getByRole('button', { name: '잠깐 멈추기' }).click();
+    await page.evaluate(() => localStorage.removeItem('ideun.memory-cards'));
+    // 대결: 위(상대, 거꾸로) · 카드판 · 아래(나)
+    await startMemory(page, { level: 'medium', rival: '아빠' });
+    await missPair(page);
+    await expectFitsViewport(page);
+    const top = (await page.getByLabel(/^아빠 \d+개/).boundingBox())!;
+    const bottom = (await page.getByLabel(/^이든 \d+개/).boundingBox())!;
+    const first = (await cards(page).first().boundingBox())!;
+    const last = (await cards(page).last().boundingBox())!;
+    expect(top.y + top.height, '상대 칸은 카드판 위').toBeLessThanOrEqual(first.y + 1);
+    expect(bottom.y, '내 칸은 카드판 아래').toBeGreaterThanOrEqual(last.y + last.height - 1);
+    expect(Math.min(first.width, first.height), '카드 크기').toBeGreaterThanOrEqual(44);
+    await page.screenshot({ path: info.outputPath(`${name}-memory-battle.png`) });
+    await page.getByRole('button', { name: '잠깐 멈추기' }).first().click();
+    await page.evaluate(() => localStorage.removeItem('ideun.memory-cards'));
+
     await page.goto('./#/games/memory-cards/records');
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-memory-records.png`) });
@@ -382,17 +403,17 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
       await page.screenshot({ path: info.outputPath(`${name}-maze-ready-${level}.png`) });
       await page.getByRole('button', { name: '▶ 시작하기' }).click();
       const s = (await mazeState(page)).session!;
-      for (const d of route(s.maze, s.pos, s.maze.goal).slice(0, 4)) await dirBtn(page, d).click();
+      for (const d of route(s.maze, s.pos, s.maze.goal).slice(0, 4)) await press(page, d);
       await page.getByRole('button', { name: /^힌트/ }).click();
       await page.waitForTimeout(300);
       await expectFitsViewport(page);
       const board = await page.locator('[data-pos]').boundingBox();
-      const btn = await dirBtn(page, 'up').boundingBox();
-      // 미로 칸은 눈으로 길을 볼 만큼, 방향 버튼은 손가락 크기
+      const btn = await joystick(page).boundingBox();
+      // 미로 칸은 눈으로 길을 볼 만큼, 조이스틱은 엄지로 밀 만큼
       expect(board!.width / s.maze.w, '미로 칸 크기').toBeGreaterThanOrEqual(level === 'hard' ? 18 : 30);
-      expect(Math.min(btn!.width, btn!.height), '방향 버튼 크기').toBeGreaterThanOrEqual(40);
-      if (width > height && width >= 560) expect(btn!.x, '방향 버튼은 미로 오른쪽').toBeGreaterThan(board!.x + board!.width);
-      else expect(btn!.y, '방향 버튼은 미로 아래').toBeGreaterThan(board!.y + board!.height - 1);
+      expect(Math.min(btn!.width, btn!.height), '조이스틱 크기').toBeGreaterThanOrEqual(100);
+      if (width > height && width >= 560) expect(btn!.x, '조이스틱은 미로 오른쪽').toBeGreaterThan(board!.x + board!.width);
+      else expect(btn!.y, '조이스틱은 미로 아래').toBeGreaterThan(board!.y + board!.height - 1);
       await page.screenshot({ path: info.outputPath(`${name}-maze-${level}.png`) });
       if (level === 'easy') {
         await walkToGoal(page);

@@ -144,3 +144,41 @@ export function pathToGoal(m: Maze, from: number): number[] {
   }
   return path;
 }
+
+/**
+ * 조이스틱을 한쪽으로 누르고 있을 때 다음 칸.
+ * 그쪽이 열려 있으면 그쪽, 막혔으면 꺾인 길(돌아가는 길 말고 나갈 길이 하나뿐)을 따라간다.
+ * 갈림길·막다른 길에서 막혔거나 누른 쪽과 정반대로 꺾여야 하면 null (멈춤).
+ */
+export function holdStep(m: Maze, from: number, d: Dir, came: number | null): { cell: number; dir: Dir } | null {
+  if (canMove(m, from, d)) return { cell: neighbor(m, from, d), dir: d };
+  if (came === null) return null;
+  const back = DIRS.find((x) => canMove(m, from, x) && neighbor(m, from, x) === came);
+  const ways = openings(m, from).filter((x) => x !== back);
+  if (ways.length !== 1 || ways[0] === OPP[d]) return null;
+  return { cell: neighbor(m, from, ways[0]), dir: ways[0] };
+}
+
+/** 두 칸 사이 가장 짧은 길 (from 제외, to 포함). maxLen보다 길면 null */
+export function pathBetween(m: Maze, from: number, to: number, maxLen = Infinity): number[] | null {
+  if (from === to) return [];
+  const prev = new Map<number, number>([[from, -1]]);
+  let frontier = [from];
+  for (let len = 1; frontier.length && len <= maxLen; len++) {
+    const next: number[] = [];
+    for (const i of frontier)
+      for (const d of openings(m, i)) {
+        const j = neighbor(m, i, d);
+        if (prev.has(j)) continue;
+        prev.set(j, i);
+        if (j === to) {
+          const path = [j];
+          for (let k = i; k !== from; k = prev.get(k)!) path.unshift(k);
+          return path;
+        }
+        next.push(j);
+      }
+    frontier = next;
+  }
+  return null;
+}

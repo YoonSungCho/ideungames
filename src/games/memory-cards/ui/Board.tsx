@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { theme } from '../engine/deck';
-import { MISS_SHOW_MS, peeking, useMemoryCards } from '../store';
+import { useSettings } from '@/shared/settings/store';
+import { cardTitle, isBattle, MISS_SHOW_MS, peeking, useMemoryCards } from '../store';
+import { PLAYER_COLOR, players } from './labels';
 import styles from './Memory.module.css';
 
 const GAP = 8;
@@ -53,11 +55,30 @@ export function Board() {
 
   const veiled = session.status === 'ready' || (session.status === 'playing' && paused);
 
+  // 대결: 틀리면 "○○ 차례!"를 잠깐 크게 알려 준다
+  const event = useMemoryCards((s) => s.event);
+  const myName = useSettings((s) => s.playerName);
+  const battle = isBattle(session);
+  const [turnTag, setTurnTag] = useState<number | null>(null);
+  useEffect(() => {
+    if (!battle || event?.kind !== 'miss') return;
+    setTurnTag(event.key);
+    const id = setTimeout(() => setTurnTag(null), 1600);
+    return () => clearTimeout(id);
+  }, [battle, event]);
+  const who = battle ? players(session, myName)[session.turn] : null;
+
   return (
-    <div className={styles.boardWrap} ref={ref}>
+    <div className={styles.boardWrap} ref={ref} style={battle ? ({ '--pc': PLAYER_COLOR[session.turn] } as CSSProperties) : undefined}>
       {peek && <p className={styles.peekTag} role="status">👀 잘 기억해 둬!</p>}
+      {!peek && who && turnTag !== null && session.status === 'playing' && (
+        <p className={[styles.peekTag, styles.turnTag, session.turn === 1 && styles.upsideDown].filter(Boolean).join(' ')} key={turnTag} role="status">
+          {who.icon} {who.name} 차례!
+        </p>
+      )}
       <div
-        className={styles.board}
+        // 대결: 열린 카드 그림·글자는 지금 차례인 사람 쪽을 향한다
+        className={[styles.board, battle && session.turn === 1 && styles.faceAway].filter(Boolean).join(' ')}
         role="group"
         aria-label="카드"
         style={{ gridTemplateColumns: `repeat(${cols}, ${w}px)`, '--cw': `${w}px`, '--back': t.color, visibility: w ? 'visible' : 'hidden' } as CSSProperties}
@@ -66,12 +87,20 @@ export function Board() {
           const matched = session.matched[i];
           const up = !veiled && (peek || matched || session.open.includes(i));
           const missed = missOpen && session.open.includes(i);
-          const label = matched ? `${c.name} 짝 찾음` : up ? `카드 ${i + 1}: ${c.face === 'word' ? `글자 ${c.name}` : c.name}` : `카드 ${i + 1}`;
+          const shown = c.face === 'word' ? `글자 ${c.name}` : c.face === 'expr' ? `식 ${c.sym}` : c.face === 'num' ? `숫자 ${c.name}` : c.name;
+          const label = matched ? `${cardTitle(c)} 짝 찾음` : up ? `카드 ${i + 1}: ${shown}` : `카드 ${i + 1}`;
           return (
             <button
               key={i}
               className={[styles.card, up && styles.up, matched && styles.matched, missed && styles.missed].filter(Boolean).join(' ')}
-              onClick={() => flipCard(i)}
+              // 손가락이 닿는 순간 뒤집는다: 누르는 사이 살짝 움직여도 (화면 끌기로 바뀌어) 안 눌리는 일이 없게
+              onPointerDown={(e) => {
+                if (e.button !== 0 || e.currentTarget.disabled) return;
+                e.preventDefault();
+                flipCard(i);
+              }}
+              // 키보드(Enter·Space)로 누를 때
+              onClick={(e) => e.detail === 0 && flipCard(i)}
               disabled={matched || veiled}
               aria-label={label}
               data-pair={c.pair}
@@ -86,8 +115,13 @@ export function Board() {
                       <span className={styles.emoji}>{c.sym}</span>
                       {matched && <span className={styles.name}>{c.name}</span>}
                     </>
+                  ) : c.face === 'expr' ? (
+                    <>
+                      <span className={[styles.word, styles.expr].join(' ')} style={{ '--len': Math.max(3, c.sym.length) } as CSSProperties}>{c.sym.replace('-', '−')}</span>
+                      {matched && <span className={styles.name}>= {c.name}</span>}
+                    </>
                   ) : (
-                    <span className={styles.word} style={{ '--len': Math.max(2, c.name.length) } as CSSProperties}>{c.name}</span>
+                    <span className={[styles.word, c.face === 'num' && styles.num].filter(Boolean).join(' ')} style={{ '--len': Math.max(2, c.name.length) } as CSSProperties}>{c.name}</span>
                   )}
                 </span>
               </span>

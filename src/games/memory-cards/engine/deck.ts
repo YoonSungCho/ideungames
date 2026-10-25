@@ -48,15 +48,18 @@ export const LEVELS: Level[] = ['tiny', 'easy', 'medium', 'hard'];
 /** 단계별 짝 수 */
 export const PAIRS: Record<Level, number> = { tiny: 3, easy: 6, medium: 8, hard: 12 };
 
-/** same: 같은 그림 두 장 / word: 그림 한 장 + 글자 한 장 */
-export type Rule = 'same' | 'word';
+/** same: 같은 그림 두 장 / word: 그림 한 장 + 글자 한 장 / math: 계산식 한 장 + 답 숫자 한 장 */
+export type Rule = 'same' | 'word' | 'math';
+export const RULES: Rule[] = ['same', 'word', 'math'];
 
 export interface Card {
   /** 짝 번호 (같은 번호끼리 짝) */
   pair: number;
+  /** 그림 (계산식이면 '12+5') */
   sym: string;
+  /** 이름 (계산식이면 답 '17') */
   name: string;
-  face: 'pic' | 'word';
+  face: 'pic' | 'word' | 'expr' | 'num';
 }
 
 export interface Board {
@@ -83,13 +86,51 @@ function shuffle<T>(xs: T[], rng: Rng): T[] {
   return a;
 }
 
+/** 단계별 계산식: 꼬마 10까지 더하기 → 쉬움 10까지 더하기·빼기 → 중간 20까지 → 어려움 50까지 */
+const MATH: Record<Level, { max: number; minus: boolean; big?: boolean }> = {
+  tiny: { max: 10, minus: false },
+  easy: { max: 10, minus: true },
+  medium: { max: 20, minus: true },
+  hard: { max: 50, minus: true, big: true },
+};
+
+const randInt = (lo: number, hi: number, rng: Rng) => lo + Math.floor(rng() * (hi - lo + 1));
+
+/** 답이 서로 다른 계산식 n개 ('12+5' → '17'). 답은 1 이상 */
+export function mathItems(level: Level, n: number, rng: Rng): { sym: string; name: string }[] {
+  const { max, minus, big } = MATH[level];
+  const out: { sym: string; name: string }[] = [];
+  const used = new Set<number>();
+  for (let guard = 0; out.length < n && guard < 5000; guard++) {
+    const sub = minus && rng() < 0.5;
+    // 어려움은 두 자리 수가 꼭 하나 들어가게
+    const lo = big ? 10 : 1;
+    let a: number, b: number, ans: number;
+    if (sub) {
+      a = randInt(Math.max(lo, 2), max, rng);
+      b = randInt(1, a - 1, rng);
+      ans = a - b;
+    } else {
+      a = randInt(lo, max - 1, rng);
+      b = randInt(1, max - a, rng);
+      ans = a + b;
+      if (rng() < 0.5) [a, b] = [b, a];
+    }
+    if (used.has(ans)) continue;
+    used.add(ans);
+    out.push({ sym: `${a}${sub ? '-' : '+'}${b}`, name: String(ans) });
+  }
+  return out;
+}
+
+/** 계산식 읽어 주기: '12+5', '17' → '12 더하기 5, 17' */
+export const sayMath = (sym: string, ans: string) => `${sym.replace('+', ' 더하기 ').replace('-', ' 빼기 ')}, ${ans}`;
+
 export function deal(themeId: ThemeId, level: Level, rule: Rule, rng: Rng): Board {
-  const picks = shuffle(theme(themeId).items, rng).slice(0, PAIRS[level]);
+  const picks = rule === 'math' ? mathItems(level, PAIRS[level], rng) : shuffle(theme(themeId).items, rng).slice(0, PAIRS[level]);
+  const faces: Record<Rule, [Card['face'], Card['face']]> = { same: ['pic', 'pic'], word: ['pic', 'word'], math: ['expr', 'num'] };
   const cards = shuffle(
-    picks.flatMap((it, pair) => [
-      { pair, ...it, face: 'pic' as const },
-      { pair, ...it, face: rule === 'word' ? ('word' as const) : ('pic' as const) },
-    ]),
+    picks.flatMap((it, pair) => faces[rule].map((face) => ({ pair, ...it, face }))),
     rng,
   );
   return { cards, matched: cards.map(() => false), open: [], moves: 0, misses: 0, combo: 0, maxCombo: 0, found: 0 };
@@ -99,10 +140,12 @@ export const pairCount = (b: Board) => b.cards.length / 2;
 /** 틀린 두 장이 열려 있는가 (곧 닫힘) */
 export const missOpen = (b: Board) => b.open.length === 2;
 
-/** 카드 한 장 뒤집기. 틀린 두 장이 열려 있을 때 다른 카드를 누르면 그 둘은 바로 닫힌다 */
+/** 카드 한 장 뒤집기. 틀린 두 장이 열려 있을 때 카드를 누르면 그 둘은 바로 닫힌다 */
 export function flip(b: Board, i: number): { board: Board; result: FlipResult } {
-  if (i < 0 || i >= b.cards.length || b.matched[i] || b.open.includes(i)) return { board: b, result: 'none' };
+  if (i < 0 || i >= b.cards.length || b.matched[i]) return { board: b, result: 'none' };
+  // 틀린 두 장이 열려 있으면 (그중 한 장을 눌러도) 둘을 닫고 누른 카드만 연다
   if (b.open.length !== 1) return { board: { ...b, open: [i] }, result: 'open' };
+  if (b.open[0] === i) return { board: b, result: 'none' };
   const j = b.open[0];
   const moves = b.moves + 1;
   if (b.cards[i].pair === b.cards[j].pair) {

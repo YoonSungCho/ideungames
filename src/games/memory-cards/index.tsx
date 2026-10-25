@@ -5,20 +5,23 @@ import { StartOverlay } from '@/shared/game/StartOverlay';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
 import { speak } from '@/shared/sound/speak';
-import { hasProgress, useMemoryCards } from './store';
+import { hasProgress, isBattle, useMemoryCards } from './store';
 import { Board } from './ui/Board';
-import { Coach, ModeBar, StatusBar } from './ui/Bars';
-import { setupTitle } from './ui/labels';
+import { Coach, ModeBar, PlayerPanel, StatusBar } from './ui/Bars';
+import { players, setupTitle } from './ui/labels';
 import { Menu } from './ui/Menu';
 import { RecordsPage } from './ui/RecordsPage';
 import { ResultModal } from './ui/ResultModal';
 import styles from './ui/Memory.module.css';
 
-/** 짝을 찾으면 이름을 읽어 준다 (그림 ↔ 낱말) */
+/** 짝을 찾으면 이름(계산식이면 식과 답)을 읽어 준다 */
 function useSayMatches() {
   const event = useMemoryCards((s) => s.event);
   useEffect(() => {
-    if ((event?.kind === 'match' || event?.kind === 'won') && event.name) speak(event.name);
+    if ((event?.kind === 'match' || event?.kind === 'won') && event.say) speak(event.say);
+    // 대결: 틀리면 다음 차례를 불러 준다
+    const s = useMemoryCards.getState().session;
+    if (event?.kind === 'miss' && s && isBattle(s)) speak(`${players(s, useSettings.getState().playerName)[event.turn ?? 0].name} 차례!`);
   }, [event]);
 }
 
@@ -54,6 +57,33 @@ function Play() {
   }
 
   const veiled = session.status === 'ready' || (session.status === 'playing' && paused);
+  const stage = (
+    <div className={styles.stage} data-stage>
+      <Board />
+      {veiled && (
+        <StartOverlay
+          ready={session.status === 'ready'}
+          title={setupTitle(session)}
+          onStart={useMemoryCards.getState().start}
+          readyHint={isBattle(session) ? '마주 앉아서 번갈아 뒤집어! 먼저 카드를 잠깐 보여 줄게.' : '누르면 카드를 잠깐 보여 줄게. 잘 기억해!'}
+          pausedHint="카드는 다시 시작하면 보여요"
+        />
+      )}
+    </div>
+  );
+
+  // 대결: 마주 앉아서 — 위(거꾸로)는 상대, 아래는 나
+  if (isBattle(session))
+    return (
+      <div className={[styles.play, styles.battlePlay, veiled && styles.veiled].filter(Boolean).join(' ')}>
+        <ModeBar onMenu={() => setPicking(true)} />
+        <PlayerPanel k={1} />
+        {stage}
+        <PlayerPanel k={0} />
+        {session.status === 'done' && <ResultModal onMenu={() => setPicking(true)} />}
+      </div>
+    );
+
   return (
     <div className={[styles.play, veiled && styles.veiled].filter(Boolean).join(' ')}>
       <ModeBar onMenu={() => setPicking(true)} />
@@ -61,18 +91,7 @@ function Play() {
         <StatusBar showMistakes={challenge} />
         <Coach />
       </div>
-      <div className={styles.stage} data-stage>
-        <Board />
-        {veiled && (
-          <StartOverlay
-            ready={session.status === 'ready'}
-            title={setupTitle(session)}
-            onStart={useMemoryCards.getState().start}
-            readyHint="누르면 카드를 잠깐 보여 줄게. 잘 기억해!"
-            pausedHint="카드는 다시 시작하면 보여요"
-          />
-        )}
-      </div>
+      {stage}
       {session.status === 'done' && <ResultModal onMenu={() => setPicking(true)} />}
     </div>
   );

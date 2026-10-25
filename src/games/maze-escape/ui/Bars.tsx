@@ -87,7 +87,7 @@ export function Coach() {
 
   useEffect(() => {
     if (!event || !h) return;
-    if (event.kind === 'start') setLine({ text: `${josa(h.goalName, '을/를')} 찾으러 가자!`, mood: 'happy' });
+    if (event.kind === 'start') setLine({ text: `${josa(h.goalName, '을/를')} 찾으러 가자! ${h.icon} 친구를 잡고 끌어 봐!`, mood: 'happy' });
     if (event.kind === 'star') setLine(got >= STAR_COUNT ? { text: '별을 다 모았어! 이제 도착!', mood: 'cheer' } : { text: pick(['반짝! 별 찾았다!', '보물 별이야!', '좋아, 별 하나 더!']), mood: 'happy' });
     if (event.kind === 'bump') setLine({ text: pick(['앗, 벽이야!', '다른 길로 가 볼까?', '쿵! 막혔네']), mood: 'oops' });
     if (event.kind === 'hint') setLine({ text: '반짝이는 길을 따라가 봐!', mood: 'think' });

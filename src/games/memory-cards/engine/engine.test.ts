@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeMiss, deal, flip, LEVELS, PAIRS, THEMES, type Board } from './deck';
+import { closeMiss, deal, flip, LEVELS, mathItems, PAIRS, sayMath, THEMES, type Board } from './deck';
 import { createRng } from './rng';
 
 const partner = (b: Board, i: number) => b.cards.findIndex((c, k) => k !== i && c.pair === b.cards[i].pair);
@@ -53,6 +53,8 @@ describe('뒤집기', () => {
     expect(closeMiss(r.board).open).toEqual([]);
     const third = r.board.cards.findIndex((_, x) => x !== 0 && x !== k);
     expect(flip(r.board, third).board.open).toEqual([third]);
+    // 틀린 두 장 중 하나를 다시 눌러도 그 카드만 열린다
+    expect(flip(r.board, k)).toMatchObject({ result: 'open', board: { open: [k] } });
   });
 
   it('모든 짝을 찾으면 끝', () => {
@@ -65,5 +67,45 @@ describe('뒤집기', () => {
     }
     expect(last).toBe('won');
     expect(b).toMatchObject({ found: 3, moves: 3, maxCombo: 3 });
+  });
+});
+
+describe('계산식 카드', () => {
+  it('식 한 장 + 답 한 장이 짝이고, 답은 판에서 서로 다르다', () => {
+    for (const level of LEVELS)
+      for (let seed = 1; seed < 40; seed++) {
+        const b = deal('animal', level, 'math', createRng(seed));
+        expect(b.cards).toHaveLength(PAIRS[level] * 2);
+        const answers = new Set<string>();
+        for (let p = 0; p < PAIRS[level]; p++) {
+          const two = b.cards.filter((c) => c.pair === p);
+          expect(two.map((c) => c.face).sort()).toEqual(['expr', 'num']);
+          answers.add(two[0].name);
+        }
+        expect(answers.size).toBe(PAIRS[level]);
+      }
+  });
+
+  it('단계별 범위: 꼬마는 10까지 더하기, 어려움은 두 자리 수가 들어간 50까지', () => {
+    const rng = createRng(9);
+    for (let k = 0; k < 50; k++) {
+      for (const x of mathItems('tiny', 3, rng)) {
+        expect(x.sym).toMatch(/^\d+\+\d+$/);
+        expect(Number(x.name)).toBeLessThanOrEqual(10);
+      }
+      for (const x of mathItems('hard', 12, rng)) {
+        const [a, b] = x.sym.split(/[+-]/).map(Number);
+        const v = x.sym.includes('+') ? a + b : a - b;
+        expect(v).toBe(Number(x.name));
+        expect(v).toBeGreaterThanOrEqual(1);
+        expect(Math.max(a, b, v)).toBeLessThanOrEqual(50);
+        expect(Math.max(a, b)).toBeGreaterThanOrEqual(10);
+      }
+    }
+  });
+
+  it('읽어 주기', () => {
+    expect(sayMath('12+5', '17')).toBe('12 더하기 5, 17');
+    expect(sayMath('9-3', '6')).toBe('9 빼기 3, 6');
   });
 });

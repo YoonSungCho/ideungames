@@ -6,7 +6,7 @@ import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { hasProgress, useMazeEscape } from './store';
 import { Board } from './ui/Board';
 import { Coach, ModeBar, StatusBar } from './ui/Bars';
-import { DPad, useKeyboard } from './ui/Controls';
+import { Controls, useKeyboard } from './ui/Controls';
 import { setupTitle } from './ui/labels';
 import { Menu } from './ui/Menu';
 import { RecordsPage } from './ui/RecordsPage';
@@ -58,13 +58,13 @@ function Play() {
             ready={session.status === 'ready'}
             title={setupTitle(session)}
             onStart={useMazeEscape.getState().start}
-            readyHint="누르면 미로가 보이고 시간이 흘러가요"
+            readyHint="친구를 손가락으로 잡고 길을 따라 끌거나, 조이스틱을 밀어 봐!"
             pausedHint="미로는 다시 시작하면 보여요"
           />
         )}
       </div>
       <div className={styles.padArea}>
-        <DPad />
+        <Controls />
       </div>
       {session.status === 'done' && <ResultModal onMenu={() => setPicking(true)} />}
     </div>

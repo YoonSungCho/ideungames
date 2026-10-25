@@ -8,8 +8,8 @@ const LIMIT_SEC: Record<Level, [number, number, number, number]> = {
   medium: [32, 45, 70, 110],
   hard: [60, 85, 130, 200],
 };
-/** 그림과 글자는 글자를 읽어야 해서 조금 넉넉하게 */
-const RULE_SCALE: Record<Rule, number> = { same: 1, word: 1.3 };
+/** 그림과 글자는 글자를 읽어야 해서, 계산식은 셈을 해야 해서 넉넉하게 */
+const RULE_SCALE: Record<Rule, number> = { same: 1, word: 1.3, math: 1.7 };
 
 type Key = { level: Level; rule: Rule };
 

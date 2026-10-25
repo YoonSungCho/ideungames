@@ -6,13 +6,12 @@ import { whenLabel } from '@/shared/game/records';
 import styles from '@/shared/game/Records.module.css';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { StarIcon } from '@/shared/ui/icons';
-import { LEVELS, PAIRS, type Level, type Rule } from '../engine/deck';
+import { LEVELS, RULES, PAIRS, type Level, type Rule } from '../engine/deck';
 import { medalFor, nextMedalFor } from '../records';
 import { hasProgress, recordKey, useMemoryCards } from '../store';
 import { LEVEL_COLOR, LEVEL_LABEL, LEVEL_STARS, RULE_LABEL, setupTitle } from './labels';
 
 const SHOWN_RUNS = 5;
-const RULES: Rule[] = ['same', 'word'];
 
 function MedalShelf() {
   const records = useMemoryCards((s) => s.records);

@@ -119,3 +119,62 @@ test('진행 중에 다른 단계를 고르면 묻는다', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: '취소하고 새로 시작' }).click();
   await expect(cards(page)).toHaveCount(16);
 });
+
+test('누르다가 손가락이 조금 밀려도 카드가 뒤집힌다', async ({ page }) => {
+  await startMemory(page, { level: 'easy' });
+  const box = (await cards(page).nth(0).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 12, box.y + box.height / 2 + 14, { steps: 4 });
+  await page.mouse.up();
+  await expect(cards(page).nth(0)).toHaveAttribute('aria-label', /^카드 1: /);
+  expect((await memState(page)).session!.open).toEqual([0]);
+});
+
+test('계산식: 식 카드와 답 숫자 카드가 짝, 찾으면 식 = 답이 보인다', async ({ page }) => {
+  await openMemory(page, { rule: '계산식', level: 'easy' });
+  // 계산식엔 그림 테마 고르기가 없다
+  await page.getByRole('button', { name: /바꾸기$/ }).click();
+  await expect(page.getByRole('radiogroup', { name: '카드 그림' })).toBeHidden();
+  await expect(page.getByText('10까지 더하기·빼기')).toBeVisible();
+  await page.getByRole('button', { name: /^쉬움 6쌍/ }).click();
+  await page.getByRole('button', { name: '▶ 시작하기' }).click();
+  await expect(page.getByText('잘 기억해 둬!')).toBeHidden({ timeout: 6000 });
+
+  const s = (await memState(page)).session!;
+  const e = s.cards.findIndex((c) => c.face === 'expr');
+  const n = s.cards.findIndex((c, k) => k !== e && c.pair === s.cards[e].pair);
+  const { sym, name } = s.cards[e];
+  await cards(page).nth(e).click();
+  await expect(cards(page).nth(e)).toHaveAttribute('aria-label', `카드 ${e + 1}: 식 ${sym}`);
+  await cards(page).nth(n).click();
+  await expect(cards(page).nth(n)).toHaveAttribute('aria-label', `${sym}=${name} 짝 찾음`);
+  await expect(cards(page).nth(n)).toContainText(name);
+  await expect(cards(page).nth(e)).toContainText(`= ${name}`);
+});
+
+test('둘이서 대결: 찾으면 한 번 더, 틀리면 상대 차례, 끝나면 이긴 사람', async ({ page }) => {
+  await startMemory(page, { rival: '엄마', level: 'tiny' });
+  await expect(page.getByLabel(/^이든 0개, 지금 차례$/)).toBeVisible();
+  await expect(page.getByLabel(/^엄마 0개$/)).toBeVisible();
+  // 대결엔 시간·메달이 없다
+  await expect(page.getByLabel('걸린 시간')).toBeHidden();
+
+  await matchPair(page);
+  await expect(page.getByLabel('이든 1개, 지금 차례')).toBeVisible();
+  await missPair(page);
+  await expect(page.getByRole('status').filter({ hasText: '엄마 차례!' })).toBeVisible();
+  await expect(page.getByLabel('엄마 0개, 지금 차례')).toBeVisible();
+  await matchPair(page);
+  await matchPair(page);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('엄마 승리!');
+  await expect(dialog.getByLabel('이든 1개')).toBeVisible();
+  await expect(dialog.getByLabel('엄마 2개')).toBeVisible();
+  await expect(dialog).toContainText('이든아, 다음엔 이길 수 있어!');
+  await dialog.getByRole('button', { name: '한 판 더!' }).click();
+  // 진 사람이 먼저
+  await expect(page.getByLabel('이든 0개, 지금 차례')).toBeVisible();
+  await expect(page.getByText('먼저 해!')).toBeVisible();
+  expect((await memState(page)).records).toEqual({});
+});
