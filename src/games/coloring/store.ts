@@ -23,6 +23,7 @@ interface State {
   color: string;
   pattern: Pattern;
   brushSize: number;
+  eraserSize: number;
   art: Record<string, Art>;
   event: ColoringEvent | null;
   /** 되돌리기용 (저장 안 함) */
@@ -33,8 +34,10 @@ interface State {
   setColor: (c: string) => void;
   setPattern: (p: Pattern) => void;
   setBrushSize: (w: number) => void;
+  setEraserSize: (w: number) => void;
   tapPart: (pic: string, part: string) => void;
-  drawStroke: (pic: string, stroke: Omit<Stroke, 'c' | 'w'>) => void;
+  /** 붓이면 붓 선, 지우개면 지우개 선 (붓 그림만 지움) */
+  drawStroke: (pic: string, stroke: Pick<Stroke, 'pts'>) => void;
   undo: (pic: string) => void;
   reset: (pic: string) => void;
 }
@@ -68,6 +71,7 @@ export const useColoring = create<State>()(
         color: PALETTE[0],
         pattern: 'solid',
         brushSize: 6,
+        eraserSize: 16,
         art: {},
         event: null,
         history: {},
@@ -90,6 +94,10 @@ export const useColoring = create<State>()(
           playSound('tap');
           set({ brushSize, tool: 'brush' });
         },
+        setEraserSize: (eraserSize) => {
+          playSound('tap');
+          set({ eraserSize, tool: 'eraser' });
+        },
 
         tapPart: (picId, partId) => {
           const pic = picture(picId);
@@ -110,7 +118,13 @@ export const useColoring = create<State>()(
         drawStroke: (picId, stroke) => {
           if (!stroke.pts.length) return;
           const art = get().art[picId] ?? emptyArt();
-          commit(picId, addStroke(art, { ...stroke, c: nextColor(), w: get().brushSize }));
+          if (get().tool === 'eraser') {
+            if (!art.strokes.some((s) => !s.e)) return;
+            playSound('erase');
+            commit(picId, addStroke(art, { pts: stroke.pts, c: '#000', w: get().eraserSize, e: 1 }));
+            return;
+          }
+          commit(picId, addStroke(art, { pts: stroke.pts, c: nextColor(), w: get().brushSize }));
         },
 
         undo: (picId) => {
@@ -134,7 +148,7 @@ export const useColoring = create<State>()(
     {
       name: storageKey('coloring'),
       version: 1,
-      partialize: (s) => ({ tool: s.tool, color: s.color, pattern: s.pattern, brushSize: s.brushSize, art: s.art }),
+      partialize: (s) => ({ tool: s.tool, color: s.color, pattern: s.pattern, brushSize: s.brushSize, eraserSize: s.eraserSize, art: s.art }),
     },
   ),
 );

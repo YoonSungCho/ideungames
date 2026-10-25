@@ -12,6 +12,7 @@ const TOOLS: { id: Tool; icon: string; name: string }[] = [
 ];
 const PATTERN_NAME: Record<Pattern, string> = { solid: '그냥', dots: '물방울', stripes: '줄무늬', sparkle: '반짝이' };
 const SIZES = [{ w: 3, name: '가는 붓' }, { w: 6, name: '보통 붓' }, { w: 12, name: '굵은 붓' }];
+const ERASERS = [{ w: 8, name: '작은 지우개' }, { w: 16, name: '보통 지우개' }, { w: 28, name: '큰 지우개' }];
 
 /** 도구 줄: 칠하기·붓·지우개·마법 붓 | 되돌리기·처음부터·저장 */
 export function Tools({ onUndo, canUndo, onReset, onSave }: { onUndo: () => void; canUndo: boolean; onReset: () => void; onSave: () => void }) {
@@ -41,16 +42,27 @@ export function Tools({ onUndo, canUndo, onReset, onSave }: { onUndo: () => void
   );
 }
 
-/** 도구별 옵션 한 줄: 칠하기 → 무늬, 붓 → 굵기, 지우개·마법 붓 → 설명 */
+/** 도구별 옵션 한 줄: 칠하기 → 무늬, 붓 → 굵기, 지우개 → 크기, 마법 붓 → 설명 */
 export function Options() {
   const tool = useColoring((s) => s.tool);
   const pattern = useColoring((s) => s.pattern);
   const brushSize = useColoring((s) => s.brushSize);
   const color = useColoring((s) => s.color);
-  const { setPattern, setBrushSize } = useColoring.getState();
+  const eraserSize = useColoring((s) => s.eraserSize);
+  const { setPattern, setBrushSize, setEraserSize } = useColoring.getState();
   const swatch = color === RAINBOW ? undefined : color;
 
-  if (tool === 'eraser') return <p className={styles.optHint}>🧽 지울 곳을 눌러 봐!</p>;
+  if (tool === 'eraser')
+    return (
+      <div className={styles.options} role="radiogroup" aria-label="지우개 크기">
+        {ERASERS.map((s) => (
+          <button key={s.w} role="radio" aria-checked={eraserSize === s.w} aria-label={s.name} className={[styles.opt, eraserSize === s.w && styles.on].filter(Boolean).join(' ')} onClick={() => setEraserSize(s.w)}>
+            <span className={[styles.dot, styles.eraserDot].join(' ')} style={{ width: s.w + 6, height: s.w + 6 }} />
+          </button>
+        ))}
+        <span className={styles.optNote}>문지르면 붓 그림, 콕 누르면 색이 지워져</span>
+      </div>
+    );
   if (tool === 'magic') return <p className={styles.optHint}>🪄 누르면 어울리는 색으로 칠해 줘!</p>;
   if (tool === 'brush')
     return (

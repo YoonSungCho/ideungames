@@ -9,6 +9,25 @@ const part = (page: Page, name: string) => page.getByRole('button', { name: new 
 const tool = (page: Page, name: string) => page.getByRole('toolbar', { name: '도구' }).getByRole('button', { name, exact: true });
 const color = (page: Page, name: string) => page.getByRole('radiogroup', { name: '색' }).getByRole('radio', { name, exact: true });
 
+/** 그림판 좌표(200×200)를 화면 좌표로 */
+async function at(page: Page, pic: string, x: number, y: number) {
+  const box = (await page.getByRole('img', { name: `${pic} 그림` }).boundingBox())!;
+  return { x: box.x + (x / 200) * box.width, y: box.y + (y / 200) * box.height };
+}
+async function tapAt(page: Page, pic: string, x: number, y: number) {
+  const p = await at(page, pic, x, y);
+  await page.mouse.click(p.x, p.y);
+}
+/** 그림판 위를 손가락으로 쓱 (그림판 좌표) */
+async function rub(page: Page, pic: string, from: [number, number], to: [number, number]) {
+  const a = await at(page, pic, ...from);
+  const b = await at(page, pic, ...to);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  for (let k = 1; k <= 10; k++) await page.mouse.move(a.x + ((b.x - a.x) * k) / 10, a.y + ((b.y - a.y) * k) / 10);
+  await page.mouse.up();
+}
+
 async function openPicture(page: Page, name: string) {
   await page.goto('./');
   await page.getByRole('link', { name: /색칠 놀이/ }).click();
@@ -21,11 +40,11 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
 });
 
-test('홈의 그리기 칸에 색칠 놀이, 도안 8개', async ({ page }) => {
+test('홈의 그리기 칸에 색칠 놀이, 도안 20개', async ({ page }) => {
   await page.getByRole('button', { name: '그리기' }).click();
   await page.getByRole('link', { name: /색칠 놀이/ }).click();
   await expect(page.getByText('어떤 그림을 칠해 볼까?')).toBeVisible();
-  await expect(page.locator('a[href*="coloring/"]')).toHaveCount(8);
+  await expect(page.locator('a[href*="coloring/"]')).toHaveCount(20);
 });
 
 test('색을 고르고 누르면 칠해지고, 무늬도 된다. 되돌리기·지우개', async ({ page }) => {
@@ -42,9 +61,11 @@ test('색을 고르고 누르면 칠해지고, 무늬도 된다. 되돌리기·�
 
   await tool(page, '되돌리기').click();
   await expect(part(page, '코')).toHaveAttribute('data-fill', '');
+  // 지우개로 콕 누르면 그 조각 색이 지워진다
   await tool(page, '지우개').click();
-  await expect(page.getByText('지울 곳을 눌러 봐!')).toBeVisible();
-  await part(page, '머리').click();
+  await expect(page.getByRole('radiogroup', { name: '지우개 크기' })).toBeVisible();
+  await tapAt(page, '고양이', 100, 55);
+  await color(page, '파랑').click();
   await expect(part(page, '머리')).toHaveAttribute('data-fill', '');
 });
 
@@ -60,14 +81,15 @@ test('마법 붓으로 다 칠하면 완성 축하 → 도안 목록에 ✅', as
   await expect(dialog).toBeHidden();
   // 지웠다 다시 칠해도 축하는 한 번만
   await tool(page, '지우개').click();
-  await part(page, '체리').click();
+  await tapAt(page, '아이스크림', 100, 42);
+  await expect.poll(async () => Object.keys((await art(page)).icecream.fills).length).toBe(n - 1);
   await tool(page, '마법 붓').click();
   await part(page, '체리').click();
   await page.waitForTimeout(300);
   await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByRole('link', { name: '뒤로' }).click();
   await expect(page.getByRole('link', { name: '아이스크림, 완성' })).toBeVisible();
-  await expect(page.getByText('다 칠한 그림 1/8')).toBeVisible();
+  await expect(page.getByText('다 칠한 그림 1/20')).toBeVisible();
 });
 
 test('붓으로 그리면 선이 남고, 처음부터는 묻고 지운다(되돌리기로 살림)', async ({ page }) => {
@@ -88,6 +110,35 @@ test('붓으로 그리면 선이 남고, 처음부터는 묻고 지운다(되돌
   await expect.poll(async () => (await art(page)).butterfly?.strokes.length).toBe(0);
   await tool(page, '되돌리기').click();
   await expect.poll(async () => (await art(page)).butterfly?.strokes.length).toBe(1);
+});
+
+test('붓 그림은 도안 선 아래에 그려지고, 지우개로 문지르면 붓 그림만 지워진다', async ({ page }) => {
+  await openPicture(page, '고양이');
+  await color(page, '노랑').click();
+  await part(page, '머리').click();
+  await tool(page, '붓').click();
+  await page.getByRole('radio', { name: '굵은 붓' }).click();
+  // 머리 윗선(y=40)을 따라 굵게
+  await rub(page, '고양이', [70, 40], [130, 40]);
+  await expect.poll(async () => (await art(page)).cat?.strokes.length).toBe(1);
+  const svg = page.getByRole('img', { name: '고양이 그림' });
+  // 붓 그림 위에 도안 선이 다시 얹힌다 (선이 덮이지 않음)
+  const order = await svg.evaluate((el) => {
+    const g = el.querySelector('g[clip-path]')!;
+    const kids = [...g.children];
+    return { stroke: kids.findIndex((k) => k.tagName === 'g' && k.querySelector('path')), line: kids.findIndex((k) => k.getAttribute('mask')?.startsWith('url(#ol-')) };
+  });
+  expect(order.line).toBeGreaterThan(order.stroke);
+
+  await tool(page, '지우개').click();
+  await rub(page, '고양이', [65, 40], [135, 40]);
+  await expect.poll(async () => (await art(page)).cat?.strokes.length).toBe(2);
+  expect(((await art(page)).cat.strokes[1] as { e?: number }).e).toBe(1);
+  // 색은 그대로
+  expect((await art(page)).cat.fills).not.toEqual({});
+  // 되돌리면 붓 그림이 다시 보인다
+  await tool(page, '되돌리기').click();
+  await expect.poll(async () => (await art(page)).cat?.strokes.length).toBe(1);
 });
 
 test('칠한 그림은 나갔다 와도, 새로고침해도 그대로', async ({ page }) => {

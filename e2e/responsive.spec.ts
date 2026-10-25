@@ -463,6 +463,19 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.screenshot({ path: info.outputPath(`${name}-color-paint.png`) });
 
     await toolbar.getByRole('button', { name: '붓', exact: true }).click();
+    await page.getByRole('radio', { name: '굵은 붓' }).click();
+    // 지붕 선을 가로지르는 붓 그림 → 반쯤 지우개로 문지르기 (선은 그대로 보여야 함)
+    const cv = page.getByRole('img', { name: '우리 집 그림' });
+    const drag = async (x0: number, y0: number, x1: number, y1: number) => {
+      const b = (await cv.boundingBox())!;
+      await page.mouse.move(b.x + (x0 / 200) * b.width, b.y + (y0 / 200) * b.height);
+      await page.mouse.down();
+      for (let k = 1; k <= 8; k++) await page.mouse.move(b.x + ((x0 + ((x1 - x0) * k) / 8) / 200) * b.width, b.y + ((y0 + ((y1 - y0) * k) / 8) / 200) * b.height);
+      await page.mouse.up();
+    };
+    await drag(30, 80, 170, 80);
+    await toolbar.getByRole('button', { name: '지우개', exact: true }).click();
+    await drag(100, 60, 100, 100);
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-color-brush.png`) });
 

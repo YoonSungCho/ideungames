@@ -13,11 +13,12 @@ export function parseFill(f: Fill): { color: string; pattern: Pattern } {
   return b ? { color: b, pattern: a as Pattern } : { color: a, pattern: 'solid' };
 }
 
-/** 붓으로 그린 선: 색 · 굵기 · [x, y, x, y, …] (그림판 좌표) */
+/** 붓으로 그린 선: 색 · 굵기 · [x, y, x, y, …] (그림판 좌표). e = 지우개 선 (앞서 그린 붓 선을 지운다) */
 export interface Stroke {
   c: string;
   w: number;
   pts: number[];
+  e?: 1;
 }
 
 export interface Art {
@@ -70,4 +71,31 @@ export function strokePath(pts: number[]): string {
     d += `Q${pts[i]} ${pts[i + 1]} ${mx.toFixed(1)} ${my.toFixed(1)}`;
   }
   return d + `L${pts[pts.length - 2]} ${pts[pts.length - 1]}`;
+}
+
+/** 점(x, y)에서 선까지 가장 가까운 거리 */
+function distToStroke(pts: number[], x: number, y: number): number {
+  if (pts.length === 2) return Math.hypot(pts[0] - x, pts[1] - y);
+  let best = Infinity;
+  for (let i = 0; i + 3 < pts.length; i += 2) {
+    const [ax, ay, bx, by] = [pts[i], pts[i + 1], pts[i + 2], pts[i + 3]];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2)) : 0;
+    best = Math.min(best, Math.hypot(ax + t * dx - x, ay + t * dy - y));
+  }
+  return best;
+}
+
+/** (x, y)에 지금 보이는 붓 그림이 있는가 (r = 지우개 반지름만큼 넉넉히). 나중 지우개 선에 지워졌으면 없음 */
+export function paintAt(strokes: Stroke[], x: number, y: number, r = 0): boolean {
+  for (let i = strokes.length - 1; i >= 0; i--) {
+    const s = strokes[i];
+    const d = distToStroke(s.pts, x, y);
+    if (s.e) {
+      if (d <= s.w / 2) return false;
+    } else if (d <= s.w / 2 + r) return true;
+  }
+  return false;
 }
