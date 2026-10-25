@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type GameCategory = 'puzzle' | 'math' | 'word' | 'memory' | 'action';
+export type GameCategory = 'puzzle' | 'math' | 'word' | 'memory' | 'action' | 'art';
 
 export const CATEGORY_LABELS: Record<GameCategory, string> = {
   puzzle: '퍼즐',
@@ -8,6 +8,7 @@ export const CATEGORY_LABELS: Record<GameCategory, string> = {
   word: '한글',
   memory: '기억력',
   action: '순발력',
+  art: '그리기',
 };
 
 /**

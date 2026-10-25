@@ -409,3 +409,49 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.screenshot({ path: info.outputPath(`${name}-maze-records.png`) });
   });
 }
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`색칠 놀이 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/coloring');
+    await expect(page.getByText('어떤 그림을 칠해 볼까?')).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-color-gallery.png`) });
+
+    await page.goto('./#/games/coloring/house');
+    await expect(page.getByRole('img', { name: '우리 집 그림' })).toBeVisible();
+    const toolbar = page.getByRole('toolbar', { name: '도구' });
+    await toolbar.getByRole('button', { name: '마법 붓', exact: true }).click();
+    for (const part of ['지붕', '문', '해', '잔디']) await page.locator(`[aria-label^="${part}"][data-part]`).dispatchEvent('click');
+    await toolbar.getByRole('button', { name: '칠하기', exact: true }).click();
+    await page.getByRole('radio', { name: '줄무늬' }).click();
+    await page.getByRole('radiogroup', { name: '색' }).getByRole('radio', { name: '보라', exact: true }).click();
+    await page.locator('[aria-label^="벽"][data-part]').dispatchEvent('click');
+    await expectFitsViewport(page);
+    const canvas = await page.getByRole('img', { name: '우리 집 그림' }).boundingBox();
+    const sw = await page.getByRole('radio', { name: '빨강', exact: true }).boundingBox();
+    const tl = await toolbar.getByRole('button', { name: '붓', exact: true }).boundingBox();
+    // 그림판은 크게, 색·도구는 손가락으로 누를 만큼
+    expect(canvas!.width, '그림판 크기').toBeGreaterThanOrEqual(Math.min(width, height) * 0.5);
+    expect(sw!.width, '색 크기').toBeGreaterThanOrEqual(26);
+    expect(Math.min(tl!.width, tl!.height), '도구 크기').toBeGreaterThanOrEqual(38);
+    if (width > height && width >= 560) expect(tl!.x, '도구는 그림판 오른쪽').toBeGreaterThan(canvas!.x + canvas!.width);
+    await page.screenshot({ path: info.outputPath(`${name}-color-paint.png`) });
+
+    await toolbar.getByRole('button', { name: '붓', exact: true }).click();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-color-brush.png`) });
+
+    await page.goto('./#/games/coloring/icecream');
+    await toolbar.getByRole('button', { name: '마법 붓', exact: true }).click();
+    const parts = page.locator('[data-part]');
+    for (let i = 0, n = await parts.count(); i < n; i++) await parts.nth(i).dispatchEvent('click');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.waitForTimeout(700);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-color-done.png`) });
+  });
+}
