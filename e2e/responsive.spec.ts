@@ -5,6 +5,7 @@ import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 import { drop, openRain, popOne, seedRain } from './rain-helpers';
 import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir, tapTile } from './monster-helpers';
 import { cards, matchAll, matchPair, openMemory } from './memory-helpers';
+import { dirBtn, mazeState, openMaze, route, walkToGoal } from './maze-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -361,5 +362,50 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.goto('./#/games/memory-cards/records');
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-memory-records.png`) });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`미로 탈출 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/maze-escape');
+    await expect(page.getByRole('radiogroup', { name: '친구 고르기' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-maze-menu.png`) });
+
+    for (const level of ['hard', 'easy'] as const) {
+      await openMaze(page, { level, hero: level === 'hard' ? '꿀벌' : '강아지' });
+      await expectFitsViewport(page);
+      await page.screenshot({ path: info.outputPath(`${name}-maze-ready-${level}.png`) });
+      await page.getByRole('button', { name: '▶ 시작하기' }).click();
+      const s = (await mazeState(page)).session!;
+      for (const d of route(s.maze, s.pos, s.maze.goal).slice(0, 4)) await dirBtn(page, d).click();
+      await page.getByRole('button', { name: /^힌트/ }).click();
+      await page.waitForTimeout(300);
+      await expectFitsViewport(page);
+      const board = await page.locator('[data-pos]').boundingBox();
+      const btn = await dirBtn(page, 'up').boundingBox();
+      // 미로 칸은 눈으로 길을 볼 만큼, 방향 버튼은 손가락 크기
+      expect(board!.width / s.maze.w, '미로 칸 크기').toBeGreaterThanOrEqual(level === 'hard' ? 18 : 30);
+      expect(Math.min(btn!.width, btn!.height), '방향 버튼 크기').toBeGreaterThanOrEqual(40);
+      if (width > height && width >= 560) expect(btn!.x, '방향 버튼은 미로 오른쪽').toBeGreaterThan(board!.x + board!.width);
+      else expect(btn!.y, '방향 버튼은 미로 아래').toBeGreaterThan(board!.y + board!.height - 1);
+      await page.screenshot({ path: info.outputPath(`${name}-maze-${level}.png`) });
+      if (level === 'easy') {
+        await walkToGoal(page);
+        await page.waitForTimeout(800);
+        await expectFitsViewport(page);
+        await page.screenshot({ path: info.outputPath(`${name}-maze-result.png`) });
+      } else {
+        await page.getByRole('button', { name: '잠깐 멈추기' }).click();
+        await page.evaluate(() => localStorage.removeItem('ideun.maze-escape'));
+      }
+    }
+    await page.goto('./#/games/maze-escape/records');
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-maze-records.png`) });
   });
 }

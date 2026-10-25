@@ -1,0 +1,251 @@
+/* ───────── 레이아웃 (docs/GAME_UX_GUIDE.md §3) ─────────
+ * 세로: 상태 한 줄 → 미로(남는 공간 전부) → 방향 버튼(손가락 가까이)
+ * 가로: 왼쪽 미로 | 오른쪽 칸에 상태 · 로봇 · 방향 버튼
+ */
+.play {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: clamp(6px, 1.4dvh, 14px);
+  padding: 4px max(12px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.side { grid-area: side; width: min(100%, 720px); display: grid; gap: clamp(6px, 1.4dvh, 14px); align-content: start; }
+.stage { grid-area: stage; position: relative; flex: 1; min-height: 160px; width: 100%; display: flex; }
+.padArea { grid-area: pad; display: grid; justify-items: center; }
+
+.veiled .board { filter: blur(6px); opacity: 0.6; }
+.veiled .padArea { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
+
+/* ───────── 미로 ───────── */
+.boardWrap { flex: 1; min-width: 0; min-height: 0; container-type: size; display: grid; place-items: center; }
+.board {
+  width: min(100cqw, 100cqh); aspect-ratio: 1; touch-action: none; user-select: none; -webkit-user-select: none;
+  border-radius: 18px; padding: 6px; box-sizing: border-box;
+  background: linear-gradient(160deg, #8fd16a, #5aa83c); box-shadow: 0 6px 0 #3e8e2a, var(--shadow-md);
+  transition: filter 0.2s;
+}
+.svg { display: block; width: 100%; height: 100%; }
+.wall { fill: none; stroke: #5fb43f; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.wallShade { fill: none; stroke: #2f7a22; stroke-width: 2.6; stroke-linecap: round; }
+.wallLight { fill: none; stroke: #a6e07f; stroke-width: 0.7; stroke-linecap: round; transform: translate(-0.35px, -0.45px); opacity: 0.9; }
+.trail { fill: #f3b94d; opacity: 0.75; }
+.hint { fill: none; stroke: #ffd166; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.1 3.2; filter: drop-shadow(0 0 1.5px #ff9f1c); animation: hintFlow 0.6s linear infinite; }
+@keyframes hintFlow { to { stroke-dashoffset: -3.3; } }
+.goalRing { fill: rgb(255 209 102 / 0.5); stroke: #ffb703; stroke-width: 0.6; transform-box: fill-box; transform-origin: center; animation: ring 1.4s ease-in-out infinite; }
+@keyframes ring { 50% { transform: scale(1.15); opacity: 0.6; } }
+.emoji { text-anchor: middle; dominant-baseline: central; }
+.heroG { transition: transform 0.08s linear; }
+.bump { animation: bump 0.3s; }
+@keyframes bump { 25% { transform: translateX(-1px) rotate(-8deg); } 75% { transform: translateX(1px) rotate(8deg); } }
+
+/* ───────── 방향 버튼 ───────── */
+.dpad {
+  --k: clamp(52px, 8.5dvh, 76px);
+  display: grid; grid-template-columns: repeat(3, var(--k)); grid-template-rows: repeat(3, calc(var(--k) * 0.82)); gap: 6px;
+  grid-template-areas: '. up .' 'left hint right' '. down .';
+}
+.dirBtn, .hintBtn {
+  font: inherit; border: none; border-radius: 18px; cursor: pointer; color: #fff;
+  font-size: calc(var(--k) * 0.36); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  background: var(--primary); box-shadow: 0 5px 0 var(--primary-shadow), var(--shadow-sm);
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.dirBtn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--primary-shadow); }
+.d_up { grid-area: up; }
+.d_left { grid-area: left; }
+.d_right { grid-area: right; }
+.d_down { grid-area: down; }
+.hintBtn { grid-area: hint; position: relative; background: #fff4d6; color: var(--text); box-shadow: 0 5px 0 #f3d48a; border-radius: 50%; }
+.hintBtn small { position: absolute; right: -2px; top: -4px; min-width: 20px; padding: 0 4px; border-radius: 99px; background: var(--danger); color: #fff; font-size: 0.8rem; line-height: 20px; }
+.hintBtn:disabled { opacity: 0.45; cursor: default; }
+.hintBtn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #f3d48a; }
+
+/* ───────── 상단 바 (HeaderSlot) ───────── */
+.setupChip {
+  font: inherit; font-size: 1rem; border: none; cursor: pointer; white-space: nowrap;
+  padding: 7px 12px; min-height: 40px; border-radius: var(--radius-pill);
+  color: var(--text); background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--d, var(--border)), var(--shadow-sm);
+}
+.setupChip b { font-weight: normal; color: var(--primary); }
+.chipHint { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ───────── 상태 한 줄 ───────── */
+.status { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; font-size: 0.92rem; color: var(--text-muted); }
+.stat {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px; min-height: 40px; border-radius: var(--radius-pill);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+  color: var(--text-muted); font-size: 0.95rem; white-space: nowrap;
+}
+.stat:has(button) { padding-right: 6px; }
+.stat b { color: var(--text); font-weight: normal; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.starOn { display: inline-block; animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.starOff { filter: grayscale(1); opacity: 0.3; }
+.time { min-width: 2.6em; }
+.pauseBtn {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-left: 2px;
+  border: none; border-radius: 50%; cursor: pointer;
+  background: var(--surface-2); color: var(--primary);
+}
+.paceInfo { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 2px 12px; min-width: max-content; }
+.paceInfo > span { white-space: nowrap; }
+.paceInfo b { font-weight: normal; color: var(--text); font-variant-numeric: tabular-nums; }
+.pace_diamond b, b.pace_diamond { color: #0891b2; }
+.pace_gold b, b.pace_gold { color: #c27c00; }
+.pace_silver b, b.pace_silver { color: #64748b; }
+.pace_bronze b, b.pace_bronze { color: #b45309; }
+.paceBest b { color: var(--text); }
+
+/* ───────── 로봇 (가로 화면에서만) ───────── */
+.coach { display: flex; align-items: center; gap: 8px; }
+.coach svg { flex: none; width: 52px; height: auto; }
+.bubble {
+  margin: 0; background: var(--surface); padding: 8px 14px; border-radius: 18px;
+  box-shadow: var(--shadow-sm); font-size: 1.05rem; word-break: keep-all;
+  animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes pop { from { transform: scale(0.85); opacity: 0.4; } }
+
+/* ───────── 메뉴 ───────── */
+.menu {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: grid; gap: 16px; justify-items: center; align-content: start;
+  width: 100%; max-width: 600px; margin: 0 auto;
+  padding: 8px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.menuIntro { display: flex; align-items: center; gap: 12px; }
+.menuIntro > svg { flex: none; width: clamp(56px, 11dvh, 88px); height: auto; }
+.bubbleLarge { margin: 0; background: var(--surface); padding: 12px 16px; border-radius: 20px; box-shadow: var(--shadow-sm); font-size: 1.1rem; line-height: 1.5; word-break: keep-all; }
+.bubbleLarge b { color: var(--primary); font-weight: normal; }
+.resume { width: 100%; }
+.resume small { font-size: 0.8em; opacity: 0.85; }
+.menuSection { display: grid; gap: 10px; width: 100%; }
+.menuLabel { margin: 0; font-size: 1.1rem; font-weight: normal; }
+.heroes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.heroChip {
+  font: inherit; cursor: pointer; color: var(--text-muted); min-width: 0;
+  display: grid; justify-items: center; gap: 0; padding: 8px 2px;
+  border-radius: 18px; border: 3px solid var(--border); background: var(--surface);
+  -webkit-tap-highlight-color: transparent;
+}
+.heroIcon { font-size: 2rem; line-height: 1.15; }
+.heroGoal { font-size: 0.95rem; white-space: nowrap; }
+.heroChip.on { border-color: var(--success); background: #e8faf4; color: var(--text); }
+
+.diffList { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+.diffCard {
+  --d: var(--num-3);
+  position: relative; font: inherit; cursor: pointer; text-align: left;
+  display: grid; gap: 2px; align-content: start;
+  padding: 12px 16px; border: none; border-radius: var(--radius-xl);
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--d) 40%, #fff), var(--shadow-sm);
+}
+.diffCard:active { transform: translateY(4px); }
+.diffStars { display: flex; color: var(--d); }
+.diffName { font-size: 1.4rem; }
+.diffName small { font-size: 0.95rem; color: var(--text-muted); }
+.diffMeta { font-size: 0.85rem; color: var(--text-muted); }
+.diffMedal { position: absolute; right: 12px; top: 10px; font-size: 1.7rem; }
+.recordsLink, .recordsBtn {
+  justify-self: center; text-decoration: none; text-align: center;
+  padding: 12px 22px; border-radius: var(--radius-pill);
+  background: #fff4d6; color: #8a5a00; font-size: 1.1rem; box-shadow: 0 4px 0 #f3d48a;
+}
+
+/* ───────── 결과 ───────── */
+.result { display: grid; justify-items: center; gap: 8px; }
+.result h2 { margin: 0; font-size: 1.8rem; font-weight: normal; color: var(--primary); text-align: center; }
+.resultMedal { font-size: clamp(3rem, 10dvh, 4.5rem); line-height: 1; animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.resultSub { margin: 0; color: var(--text-muted); text-align: center; word-break: keep-all; }
+.resultSub b { font-weight: normal; }
+.resultStars { margin: 0; font-size: 2rem; letter-spacing: 0.1em; }
+.recordBanner { margin: 4px 0 0; padding: 8px 16px; border-radius: 999px; background: #fff4d6; color: #a86b00; font-size: 1.05rem; }
+.recordBanner s { color: var(--text-muted); }
+.recordBanner b { font-weight: normal; color: var(--danger); }
+.resultStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; width: 100%; margin: 6px 0; }
+.resultStats div { background: var(--surface-2); border-radius: 14px; padding: 8px; }
+.resultStats dt { font-size: 0.85rem; color: var(--text-muted); }
+.resultStats dd { margin: 0; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.nextGoal { margin: 0; font-size: 0.95rem; color: var(--text-muted); }
+.nextGoal b { font-weight: normal; color: var(--text); }
+.resultActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 6px; }
+.resultActions > :first-child, .resultActions > :last-child { grid-column: 1 / -1; }
+.recordsBtn { display: grid; place-items: center; padding: 12px 16px; justify-self: stretch; }
+
+@media (prefers-reduced-motion: reduce) {
+  .heroG { transition: none; }
+  .hint, .goalRing, .bump, .starOn, .bubble, .resultMedal { animation: none; }
+}
+
+/* ───────── 화면 크기별 덮어쓰기 (기본 규칙보다 뒤에 있어야 적용됨) ───────── */
+@media (max-aspect-ratio: 1/1), (max-width: 559px) {
+  .coach { display: none; }
+}
+@media (max-width: 380px) {
+  .heroIcon { font-size: 1.6rem; }
+  .heroGoal { font-size: 0.8rem; }
+  .diffCard { padding: 10px 12px; }
+  .diffName { font-size: 1.2rem; }
+}
+@media (max-height: 700px) {
+  .dpad { --k: clamp(44px, 8dvh, 60px); gap: 4px; }
+}
+@media (max-height: 700px) {
+  .resultMedal { font-size: 2.6rem; }
+  .result h2 { font-size: 1.45rem; }
+  .resultStars { font-size: 1.5rem; }
+  .resultStats { grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 2px 0; }
+  .resultStats div { padding: 4px 6px; }
+  .resultStats dt { font-size: 0.75rem; }
+  .resultStats dd { font-size: 1.05rem; }
+}
+@media (max-height: 600px) {
+  .stat { min-height: 34px; padding-top: 2px; padding-bottom: 2px; }
+  .pauseBtn { width: 28px; height: 28px; }
+  .setupChip { min-height: 34px; padding: 4px 10px; font-size: 0.95rem; }
+  .result { gap: 4px; }
+  .resultMedal { font-size: 2.4rem; }
+  .result h2 { font-size: 1.3rem; }
+  .resultStars { font-size: 1.4rem; }
+  .resultStats { margin: 2px 0; }
+  .resultStats div { padding: 4px 8px; }
+  .resultActions { grid-template-columns: repeat(4, 1fr); }
+  .resultActions > :first-child, .resultActions > :last-child { grid-column: auto; }
+  .resultActions > * { padding: 10px 8px; font-size: 1rem; }
+}
+/* 가로 화면: 왼쪽 미로 | 오른쪽 상태·로봇·방향 버튼 */
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) {
+  .play {
+    display: grid;
+    grid-template-areas: 'stage side' 'stage pad';
+    grid-template-columns: minmax(0, 1fr) clamp(220px, 30vw, 360px);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: clamp(6px, 1.6dvh, 14px) clamp(12px, 3vw, 32px);
+    width: 100%; max-width: 1400px; margin: 0 auto;
+  }
+  .side { width: 100%; }
+  .status { justify-content: flex-start; }
+  .stage { height: 100%; min-height: 0; }
+  .padArea { align-self: end; }
+  .dpad { --k: clamp(48px, 13dvh, 84px); }
+}
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) and (max-height: 430px) {
+  .coach { display: none; }
+  .play { padding-top: 0; }
+  .dpad { --k: clamp(44px, 17dvh, 64px); gap: 4px; }
+  .board { padding: 4px; border-radius: 12px; }
+}
+/* 낮은 가로 화면 메뉴: 2열 */
+@media (min-aspect-ratio: 6/5) and (min-width: 560px) and (max-height: 600px) {
+  .menu {
+    max-width: 960px; grid-template-columns: 1fr 1fr; column-gap: 24px; row-gap: 10px;
+    align-content: safe center; padding-top: 4px;
+  }
+  .menuIntro, .resume, .menuSection, .recordsLink { grid-column: 1; }
+  .menuIntro > svg { width: 52px; }
+  .bubbleLarge { font-size: 0.95rem; padding: 8px 12px; }
+  .diffList { grid-column: 2; grid-row: 1 / span 4; gap: 10px; align-self: start; }
+  .diffCard { padding: 8px 14px; }
+  .diffName { font-size: 1.2rem; }
+}
