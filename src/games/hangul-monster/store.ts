@@ -4,8 +4,9 @@ import { callName } from '@/shared/korean';
 import { useSettings } from '@/shared/settings/store';
 import { playSound } from '@/shared/sound/sfx';
 import { storageKey } from '@/shared/storage';
-import { makeQuestion } from '../hangul-hero/engine/questions';
-import type { ChoiceQuestion } from '../hangul-hero/engine/types';
+import { answerOf } from '../hangul-hero/engine/questions';
+import type { Question } from '../hangul-hero/engine/types';
+import { makeMoveQuestion } from './engine/mathQuestions';
 import { move, type MoveId, type SpeciesId } from './data/species';
 import { BADGES, ITEMS, MAPS, npcById, POTION_HP, type Building, type ItemId, type Line, type MapId, type Npc } from './data/world';
 import * as battleEngine from './engine/battle';
@@ -19,7 +20,7 @@ export const FAST_MS = 5000;
 /** 수풀에서 이만큼 걷고 나서부터 야생 몬스터가 나온다 */
 const SAFE_STEPS = 3;
 
-type Action = { type: 'battle'; npcId: string } | { type: 'starter' } | { type: 'ending' } | { type: 'shop' };
+type Action = { type: 'battle'; npcId: string } | { type: 'starter' } | { type: 'ending' } | { type: 'shop' } | { type: 'mini'; npcId: string };
 
 export interface Dialog {
   lines: Line[];
@@ -33,12 +34,19 @@ export interface BattleUi {
   beatIdx: number;
   /** beats: 장면 보는 중, menu: 할 일 고르기, moves: 기술, question: 문제, bag: 가방, party: 친구 고르기 */
   phase: 'beats' | 'menu' | 'moves' | 'question' | 'bag' | 'party';
-  question?: { q: ChoiceQuestion; moveId: MoveId };
+  question?: { q: Question; moveId: MoveId };
   /** 가장 최근 답들 (같은 문제 반복 피하기) */
   recent: string[];
 }
 
-export type Overlay = 'starter' | 'shop' | 'menu' | 'ending' | null;
+export type Overlay = 'starter' | 'shop' | 'menu' | 'ending' | 'worldmap' | null;
+
+/** 미니 게임 결과: 스도쿠는 풀었는지, 숫자 비는 점수, 빠른 계산은 걸린 시간 */
+export interface MiniResult {
+  won: boolean;
+  score?: number;
+  ms?: number;
+}
 
 interface Save {
   started: boolean;
@@ -65,6 +73,8 @@ interface State extends Save {
   dialog: Dialog | null;
   battle: BattleUi | null;
   overlay: Overlay;
+  /** 지금 하는 미니 게임 (사람 id): 스도쿠 상자 · 숫자 비 · 빠른 계산 */
+  mini: string | null;
   /** 지도에 들어설 때 이름 알림 */
   toast: { id: number; text: string } | null;
 
@@ -75,6 +85,9 @@ interface State extends Save {
   buy: (item: ItemId) => boolean;
   closeOverlay: () => void;
   openMenu: () => void;
+  openWorldMap: () => void;
+  finishMini: (result: MiniResult) => void;
+  closeMini: () => void;
   usePotionOutside: (item: 'potion' | 'bigPotion', uid: string) => void;
   makeLead: (uid: string) => void;
   toBox: (uid: string) => void;
@@ -168,7 +181,7 @@ export const useHangulMonster = create<State>()(
             patch.badges = Math.max(s.badges, gym + 1);
             set(patch);
             playSound('win');
-            say([...(npc.after ?? []), { text: `🏅 ${BADGES[gym].icon} ${BADGES[gym].name}를 받았다!` }]);
+            say([...(npc.after ?? []), { text: `🏅 ${BADGES[gym].icon} ${BADGES[gym].name}를 받았다! (배지 ${gym + 1}/${BADGES.length})` }]);
             return;
           }
           if (npc.kind === 'boss') {
@@ -190,9 +203,28 @@ export const useHangulMonster = create<State>()(
         set(patch);
       };
 
+      /** 선물 받기 → 알림 글 ("🪙 300 · 🔴 한글볼 3개") */
+      const giveReward = (r: Npc['reward']) => {
+        if (!r) return '';
+        const s = get();
+        const items = { ...s.items };
+        const parts: string[] = [];
+        if (r.coins) parts.push(`🪙 ${r.coins}`);
+        for (const [id, n] of Object.entries(r.items ?? {}) as [ItemId, number][]) {
+          items[id] += n;
+          parts.push(`${ITEMS[id].emoji} ${ITEMS[id].name} ${n}개`);
+        }
+        set({ coins: s.coins + (r.coins ?? 0), items });
+        return parts.join(' · ');
+      };
+
       const talk = (npc: Npc) => {
         const s = get();
         playSound('tap');
+        if (npc.kind === 'puzzle') {
+          return say([{ text: npc.puzzle!.size === 9 ? '🧩 커다란 스도쿠 상자다! 9칸 퍼즐을 풀면 열릴 것 같아.' : '🧩 스도쿠 상자다! 퍼즐을 풀면 열릴 것 같아.' }], { type: 'mini', npcId: npc.id });
+        }
+        if (npc.kind === 'rain' || npc.kind === 'quiz') return say(npc.lines, { type: 'mini', npcId: npc.id });
         if (npc.kind === 'item' && npc.item) {
           const it = ITEMS[npc.item.id];
           set({ picked: add(s.picked, npc.id), items: { ...s.items, [npc.item.id]: s.items[npc.item.id] + npc.item.count } });
@@ -264,10 +296,11 @@ export const useHangulMonster = create<State>()(
         dialog: null,
         battle: null,
         overlay: null,
+        mini: null,
         toast: null,
 
         newGame: () => {
-          set({ ...START, music: get().music, started: true, battle: null, overlay: null });
+          set({ ...START, music: get().music, started: true, battle: null, overlay: null, mini: null });
           say([
             { text: '여기는 한글을 품은 몬스터들이 사는 한글 나라.' },
             { text: '그런데 뒤죽박죽단이 나타나 한글을 엉망으로 만들기 시작했어요!' },
@@ -277,7 +310,7 @@ export const useHangulMonster = create<State>()(
 
         walk: (dir) => {
           const s = get();
-          if (s.dialog || s.battle || s.overlay) return 'stopped';
+          if (s.dialog || s.battle || s.overlay || s.mini) return 'stopped';
           const r = step(s.map, s.x, s.y, dir, flagsOf(s));
           switch (r.kind) {
             case 'move':
@@ -314,6 +347,7 @@ export const useHangulMonster = create<State>()(
           if (then.type === 'starter') set({ overlay: 'starter' });
           if (then.type === 'ending') set({ overlay: 'ending' });
           if (then.type === 'shop') set({ overlay: 'shop' });
+          if (then.type === 'mini') set({ mini: then.npcId });
           if (then.type === 'battle') {
             const npc = npcById(then.npcId)!;
             startFight(npc.team!.map(([sp, lv]) => makeMon(sp, lv)), npc);
@@ -329,7 +363,8 @@ export const useHangulMonster = create<State>()(
             { who: PROF, text: `${battleEngine.josaName(sp, '과/와')} 함께라면 든든하겠구나!` },
             { who: PROF, text: '풀숲에서 야생 몬스터를 만나면 기술로 싸워 봐. 기술을 쓰려면 한글 문제를 맞혀야 해!' },
             { who: PROF, text: '힘이 약해진 몬스터에게 한글볼 🔴을 던지면 친구로 만들 수 있어. 볼 5개를 줄게!' },
-            { who: PROF, text: '체육관 배지 4개를 모아서 뒤죽박죽 성으로 가 줘. 한글 나라를 부탁해!' },
+            { who: PROF, text: '체육관 배지 6개를 모아서 뒤죽박죽 성으로 가 줘. 한글 나라를 부탁해!' },
+            { who: PROF, text: '어디로 갈지 모르겠으면 위의 🗺️ 지도를 눌러 보렴!' },
           ]);
         },
 
@@ -346,6 +381,50 @@ export const useHangulMonster = create<State>()(
         },
 
         closeOverlay: () => set({ overlay: null }),
+        openWorldMap: () => {
+          if (!get().battle && !get().dialog && !get().mini) set({ overlay: 'worldmap' });
+        },
+
+        closeMini: () => set({ mini: null }),
+
+        finishMini: (r) => {
+          const s = get();
+          const npc = s.mini ? npcById(s.mini) : undefined;
+          set({ mini: null });
+          if (!npc) return;
+          if (npc.kind === 'puzzle') {
+            if (!r.won) return;
+            set({ picked: add(s.picked, npc.id) });
+            playSound('win');
+            return say([{ text: `🎁 상자가 열렸다! 선물: ${giveReward(npc.reward)}` }]);
+          }
+          const firstKey = `${npc.id}:clear`;
+          const lines: Line[] = [];
+          if (npc.kind === 'rain') {
+            const score = r.score ?? 0;
+            const coins = score * 3;
+            set({ coins: get().coins + coins });
+            lines.push({ who: npc.name, text: `${score}개나 터뜨렸구나! 🪙 ${coins}개를 줄게.` });
+            if (score >= npc.rain!.goal && !s.picked.includes(firstKey)) {
+              set({ picked: add(get().picked, firstKey) });
+              lines.push({ who: npc.name, text: `목표 ${npc.rain!.goal}개 성공! 선물이야: ${giveReward(npc.reward)}` });
+            } else if (score < npc.rain!.goal && !s.picked.includes(firstKey)) {
+              lines.push({ who: npc.name, text: `${npc.rain!.goal}개를 터뜨리면 선물을 줄게. 또 도전해!` });
+            }
+          }
+          if (npc.kind === 'quiz') {
+            const sec = Math.round((r.ms ?? 0) / 1000);
+            const coins = Math.max(20, 200 - sec * 2);
+            set({ coins: get().coins + coins });
+            lines.push({ who: npc.name, text: `10문제를 ${sec}초 만에! 🪙 ${coins}개를 줄게.` });
+            if (!s.picked.includes(firstKey)) {
+              set({ picked: add(get().picked, firstKey) });
+              lines.push({ who: npc.name, text: `처음 다 푼 기념 선물: ${giveReward(npc.reward)}` });
+            }
+          }
+          playSound('win');
+          say(lines);
+        },
         openMenu: () => {
           if (!get().battle && !get().dialog) set({ overlay: 'menu' });
         },
@@ -407,10 +486,12 @@ export const useHangulMonster = create<State>()(
           const b = get().battle;
           if (!b || b.phase !== 'moves') return;
           const mv = move(moveId);
-          let q = makeQuestion(mv.q[Math.floor(rng() * mv.q.length)], rng, mv.options) as ChoiceQuestion;
-          for (let i = 0; i < 6 && b.recent.includes(q.answer + q.prompt.ask); i++) q = makeQuestion(mv.q[Math.floor(rng() * mv.q.length)], rng, mv.options) as ChoiceQuestion;
+          const make = () => makeMoveQuestion(mv.q[Math.floor(rng() * mv.q.length)], rng, mv.options);
+          const key = (q: Question) => answerOf(q) + q.prompt.ask;
+          let q = make();
+          for (let i = 0; i < 6 && b.recent.includes(key(q)); i++) q = make();
           playSound('select');
-          set({ battle: { ...b, phase: 'question', question: { q, moveId }, recent: [...b.recent, q.answer + q.prompt.ask].slice(-6) } });
+          set({ battle: { ...b, phase: 'question', question: { q, moveId }, recent: [...b.recent, key(q)].slice(-6) } });
         },
 
         answer: (correct, elapsedMs) => {
@@ -474,3 +555,19 @@ export const useHangulMonster = create<State>()(
 );
 
 export const currentBeat = (b: BattleUi) => b.beats[Math.min(b.beatIdx, b.beats.length - 1)];
+
+/** 지금 해야 할 일 (지도·화면 위 안내) */
+export function nextGoal(s: Pick<Save, 'party' | 'defeated' | 'badges' | 'champion' | 'map'>): { text: string; map: MapId } {
+  if (!s.party.length) return { text: '연구소 🏫에서 박사님께 첫 친구 받기', map: 'town' };
+  if (!s.defeated.includes('grunt0')) return { text: '마을 위쪽의 뒤죽박죽단 졸개 물리치기', map: 'town' };
+  if (s.badges < BADGES.length) {
+    const gymMap = (Object.keys(MAPS) as MapId[]).find((m) => MAPS[m].gym === s.badges)!;
+    const leader = gymNpc(gymMap)!;
+    return { text: `${MAPS[gymMap].name} 체육관 🏟️에서 ${leader.name} 이기기`, map: gymMap };
+  }
+  if (!s.champion) return { text: '뒤죽박죽 성 꼭대기의 대장 물리치기', map: 'castle' };
+  return { text: '도감을 모두 채워 보자! 📖', map: s.map };
+}
+
+/** 지도 순서 (마을에서 성까지) */
+export const ROUTE: MapId[] = ['town', 'forest', 'beach', 'cave', 'flower', 'mountain', 'tower', 'castle'];

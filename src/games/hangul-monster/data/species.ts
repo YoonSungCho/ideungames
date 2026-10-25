@@ -1,25 +1,29 @@
-import type { QuestionType } from '../../hangul-hero/engine/types';
+import type { MoveQ } from '../engine/mathQuestions';
 
 /**
  * 한글 몬스터 도감 데이터.
  * 속성(Elem)마다 쓰는 기술 = 푸는 한글 문제가 다르다 → 여러 속성의 몬스터를 모을수록 여러 한글을 배운다.
  */
-export type Elem = 'consonant' | 'vowel' | 'batchim' | 'word' | 'chaos';
+export type Elem = 'consonant' | 'vowel' | 'batchim' | 'word' | 'number' | 'math' | 'chaos';
 
 export const ELEM_INFO: Record<Elem, { name: string; icon: string; color: string }> = {
   consonant: { name: '자음', icon: '🔥', color: '#ff7a3c' },
   vowel: { name: '모음', icon: '💧', color: '#3f9cf5' },
   batchim: { name: '받침', icon: '🪨', color: '#a0764f' },
   word: { name: '낱말', icon: '🌿', color: '#3fb56a' },
+  number: { name: '숫자', icon: '⚡', color: '#f2b705' },
+  math: { name: '계산', icon: '⚙️', color: '#4f8fb8' },
   chaos: { name: '뒤죽박죽', icon: '🌀', color: '#7b5cc4' },
 };
 
-/** 불(자음) → 풀(낱말) → 물·땅, 물(모음) → 불·땅, 땅(받침) → 불 */
+/** 불(자음) → 풀(낱말)·강철(계산), 풀 → 물·땅, 물(모음) → 불·땅, 땅(받침) → 불·전기(숫자), 전기 → 물·강철, 강철 → 땅 */
 const STRONG: Record<Elem, Elem[]> = {
-  consonant: ['word'],
+  consonant: ['word', 'math'],
   word: ['vowel', 'batchim'],
   vowel: ['consonant', 'batchim'],
-  batchim: ['consonant'],
+  batchim: ['consonant', 'number'],
+  number: ['vowel', 'math'],
+  math: ['batchim'],
   chaos: [],
 };
 
@@ -33,8 +37,8 @@ export interface Move {
   name: string;
   elem: Elem;
   power: number;
-  /** 이 기술을 쓰려면 푸는 문제 */
-  q: QuestionType[];
+  /** 이 기술을 쓰려면 푸는 문제: 한글 문제(한글 용사) 또는 숫자·계산 문제(숫자 비·빠른 계산) */
+  q: MoveQ[];
   options: number;
 }
 
@@ -45,13 +49,24 @@ export const MOVES = {
   v_squirt: { name: '모음 물대포', elem: 'vowel', power: 9, q: ['listenVowel'], options: 3 },
   v_wave: { name: '모음 파도', elem: 'vowel', power: 12, q: ['syllableVowel'], options: 3 },
   v_swirl: { name: '글자 소용돌이', elem: 'vowel', power: 16, q: ['combine'], options: 4 },
+  v_build: { name: '글자 짓기 물보라', elem: 'vowel', power: 19, q: ['build'], options: 4 },
   b_stone: { name: '받침 돌팔매', elem: 'batchim', power: 10, q: ['batchimRead'], options: 3 },
   b_quake: { name: '받침 지진', elem: 'batchim', power: 13, q: ['batchimPick'], options: 3 },
   b_rock: { name: '받침 바위꽝', elem: 'batchim', power: 17, q: ['batchimRead', 'batchimPick'], options: 4 },
   w_leaf: { name: '낱말 잎날리기', elem: 'word', power: 10, q: ['pictureWord'], options: 3 },
   w_vine: { name: '빈칸 덩굴채찍', elem: 'word', power: 13, q: ['missingSyllable'], options: 3 },
   w_group: { name: '무리 짓기 빔', elem: 'word', power: 16, q: ['categoryPick', 'oddOneOut'], options: 4 },
-  w_opposite: { name: '반대말 번개', elem: 'word', power: 18, q: ['oppositePick'], options: 4 },
+  w_opposite: { name: '반대말 번개', elem: 'word', power: 18, q: ['oppositePick', 'oppositeSentence'], options: 4 },
+  w_sentence: { name: '문장 꽃폭풍', elem: 'word', power: 20, q: ['sentenceBlank', 'sentenceOrder'], options: 3 },
+  n_count: { name: '하나둘 번개', elem: 'number', power: 9, q: ['count'], options: 3 },
+  n_read: { name: '숫자 읽기 빔', elem: 'number', power: 12, q: ['numWord'], options: 3 },
+  n_place: { name: '자릿수 썬더', elem: 'number', power: 16, q: ['place'], options: 4 },
+  n_rain: { name: '숫자 비 폭풍', elem: 'number', power: 19, q: ['count', 'numWord', 'place'], options: 4 },
+  m_add: { name: '더하기 펀치', elem: 'math', power: 9, q: ['add10'], options: 3 },
+  m_sub: { name: '빼기 레이저', elem: 'math', power: 12, q: ['sub10', 'add10'], options: 3 },
+  m_carry: { name: '받아올림 로켓', elem: 'math', power: 15, q: ['addsub20'], options: 4 },
+  m_mul: { name: '구구단 미사일', elem: 'math', power: 18, q: ['mul', 'div'], options: 4 },
+  m_two: { name: '두 자리 대포', elem: 'math', power: 20, q: ['two'], options: 4 },
   // 뒤죽박죽단 몬스터만 쓰는 기술 (상대 차례라 문제가 없다)
   x_mess: { name: '뒤죽박죽 펀치', elem: 'chaos', power: 10, q: [], options: 0 },
   x_storm: { name: '엉망진창 폭풍', elem: 'chaos', power: 15, q: [], options: 0 },
@@ -63,9 +78,11 @@ export const move = (id: MoveId): Move => MOVES[id];
 /** 속성별로 배우는 기술 [레벨, 기술] */
 const LEARN: Record<Elem, [number, MoveId][]> = {
   consonant: [[1, 'c_punch'], [5, 'c_headbutt'], [12, 'c_storm']],
-  vowel: [[1, 'v_squirt'], [5, 'v_wave'], [12, 'v_swirl']],
+  vowel: [[1, 'v_squirt'], [5, 'v_wave'], [12, 'v_swirl'], [18, 'v_build']],
   batchim: [[1, 'b_stone'], [5, 'b_quake'], [12, 'b_rock']],
-  word: [[1, 'w_leaf'], [5, 'w_vine'], [12, 'w_group'], [18, 'w_opposite']],
+  word: [[1, 'w_leaf'], [5, 'w_vine'], [12, 'w_group'], [18, 'w_opposite'], [22, 'w_sentence']],
+  number: [[1, 'n_count'], [5, 'n_read'], [12, 'n_place'], [20, 'n_rain']],
+  math: [[1, 'm_add'], [5, 'm_sub'], [12, 'm_carry'], [18, 'm_mul'], [24, 'm_two']],
   chaos: [[1, 'x_mess'], [10, 'x_storm']],
 };
 
@@ -131,6 +148,21 @@ export const SPECIES = {
   nabi: S('나비랑', 'word', '나비', '#ff9fd4', 'bird', '날갯짓으로 낱말 가루를 뿌린다.', { atk: 1.05 }),
   gureum: S('구름이', 'word', '구름', '#dbe8ff', 'ghost', '몽실몽실 떠다니는 구름 몬스터.', { hp: 22 }),
   mujigae: S('무지개몬', 'word', '무지개', '#ff8ad8', 'bird', '비 온 뒤에만 보이는 아주 드문 몬스터.', { hp: 21, atk: 1.15 }),
+
+  // 숫자 산
+  hana: S('하나몽', 'number', '1', '#ffcf3a', 'beast', '귀가 숫자 1처럼 쫑긋. 하나, 둘! 번개처럼 뛴다.', { hp: 19, evolve: { to: 'beongae', at: 22 } }),
+  beongae: S('번개몽', 'number', '10', '#f5b400', 'beast', '하나몽이 자란 모습. 10까지 단숨에 센다.', { stage: 2, hp: 24, atk: 1.15 }),
+  duldul: S('둘둘이', 'number', '2', '#ffd95c', 'blob', '늘 둘씩 짝지어 다니는 숫자 몬스터.', { hp: 20 }),
+  set: S('셋별이', 'number', '3', '#ffe27a', 'bird', '꼬리별 세 개를 달고 밤하늘을 난다.', { atk: 1.05 }),
+  yeong: S('영동글', 'number', '0', '#fff0a8', 'ghost', '아무것도 없는 0을 닮은 동글동글 몬스터.', { hp: 21 }),
+  baekman: S('백만볼트', 'number', '100', '#ffb800', 'beast', '아주 드문 전기 몬스터. 100까지 번쩍!', { hp: 22, atk: 1.2 }),
+
+  // 계산 탑
+  deohagi: S('더하기봇', 'math', '+', '#5aa9d6', 'rock', '무엇이든 더해 주는 로봇 몬스터.', { hp: 21 }),
+  ppaegi: S('빼기봇', 'math', '−', '#e0708a', 'rock', '하나씩 쏙쏙 빼 가는 장난꾸러기 로봇.', { hp: 20, atk: 1.05 }),
+  gopsem: S('곱셈봇', 'math', '×', '#4fbf8f', 'rock', '구구단 노래를 부르는 로봇.', { hp: 21, evolve: { to: 'gugu', at: 24 } }),
+  gugu: S('구구킹', 'math', '9×9', '#2f9e6e', 'rock', '곱셈봇이 자란 모습. 구구단을 거꾸로도 외운다.', { stage: 2, hp: 26, atk: 1.15 }),
+  nanugi: S('나누기새', 'math', '÷', '#8f9ce8', 'bird', '아주 드문 몬스터. 똑같이 나누는 걸 좋아한다.', { hp: 20, atk: 1.15 }),
 
   // 뒤죽박죽단
   eongmang: S('엉망이', 'chaos', '?!', '#8f7bb5', 'ghost', '글자를 엉망으로 섞어 버리는 장난꾸러기.'),

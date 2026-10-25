@@ -19,7 +19,7 @@ export const mapSize = (map: MapId) => ({ w: MAPS[map].rows[0].length, h: MAPS[m
 export function visibleNpcs(map: MapId, f: Flags): Npc[] {
   return NPCS.filter((n) => {
     if (n.map !== map) return false;
-    if (n.kind === 'item') return !f.picked.includes(n.id);
+    if (n.kind === 'item' || n.kind === 'puzzle') return !f.picked.includes(n.id);
     if (n.leaves) return !f.defeated.includes(n.id);
     if (n.kind === 'guard') return f.badges < (n.needBadges ?? 0);
     return n.kind !== 'gym'; // 관장은 체육관 건물 안에 있다

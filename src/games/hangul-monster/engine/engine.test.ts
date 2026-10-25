@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { josa } from '@/shared/korean';
-import { makeQuestion } from '../../hangul-hero/engine/questions';
+import { makeMoveQuestion } from './mathQuestions';
 import { DEX, effectiveness, MOVES, movesAt, SPECIES, SPECIES_IDS, STARTERS, type MoveId } from '../data/species';
 import { BUILDING_TILE, MAPS, NPCS, WALK, type MapId } from '../data/world';
 import { attack, catchChance, foe, heal, me, numRo, run, startBattle, switchTo, throwBall } from './battle';
@@ -8,7 +8,7 @@ import { gainXp, makeMon, maxHp, xpNeed } from './monster';
 import { createRng } from './rng';
 import { findPath, rollEncounter, step, visibleNpcs, type Flags } from './world';
 
-const ALL: Flags = { badges: 4, defeated: NPCS.map((n) => n.id), picked: NPCS.map((n) => n.id), hasStarter: true };
+const ALL: Flags = { badges: 6, defeated: NPCS.map((n) => n.id), picked: NPCS.map((n) => n.id), hasStarter: true };
 const NONE: Flags = { badges: 0, defeated: [], picked: [], hasStarter: false };
 const fixed = (v: number) => () => v;
 
@@ -36,7 +36,7 @@ describe('지도', () => {
         expect(WALK.has(m.rows[n.y][n.x]), `${n.id} 서 있는 칸`).toBe(true);
         // 이 사람만 남아 있는 상태 (앞을 막던 졸개는 이긴 뒤)
         const only: Flags = {
-          badges: n.kind === 'guard' ? n.needBadges! - 1 : 4,
+          badges: n.kind === 'guard' ? n.needBadges! - 1 : 6,
           defeated: ALL.defeated.filter((d) => d !== n.id),
           picked: ALL.picked.filter((d) => d !== n.id),
           hasStarter: true,
@@ -91,10 +91,22 @@ describe('지도', () => {
 });
 
 describe('몬스터', () => {
-  it('기술 문제는 모두 보기 고르기로 나온다', () => {
+  it('기술 문제: 보기에 정답이 꼭 하나 있다 (글자 짓기·문장 순서는 그 모양으로)', () => {
     const rng = createRng(1);
     for (const [id, mv] of Object.entries(MOVES)) {
-      for (const t of mv.q) for (let i = 0; i < 20; i++) expect(makeQuestion(t, rng, mv.options).kind, `${id} ${t}`).toBe('choice');
+      for (const t of mv.q) {
+        for (let i = 0; i < 30; i++) {
+          const q = makeMoveQuestion(t, rng, mv.options);
+          if (t === 'build') expect(q.kind).toBe('build');
+          else if (t === 'sentenceOrder') expect(q.kind).toBe('order');
+          else {
+            expect(q.kind, `${id} ${t}`).toBe('choice');
+            if (q.kind !== 'choice') continue;
+            expect(q.options.filter((o) => o === q.answer), `${id} ${t}`).toHaveLength(1);
+            expect(new Set(q.options).size).toBe(q.options.length);
+          }
+        }
+      }
     }
   });
 

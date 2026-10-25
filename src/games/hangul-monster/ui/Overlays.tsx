@@ -96,7 +96,7 @@ export function MenuSheet() {
   const TABS: [Tab, string][] = [['party', '🐾 친구들'], ['bag', '🎒 가방'], ['dex', '📖 도감'], ['badge', '🏅 배지']];
 
   return (
-    <Modal open labelledBy="menu-title" onClose={close}>
+    <Modal open wide labelledBy="menu-title" onClose={close}>
       <div className={styles.sheet}>
         <h2 id="menu-title" className={styles.srOnly}>메뉴</h2>
         <div className={styles.tabs} role="tablist" aria-label="메뉴">

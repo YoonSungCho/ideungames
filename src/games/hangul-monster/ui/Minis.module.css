@@ -1,0 +1,82 @@
+/* 미니 게임: 지도 위를 덮는 화면 */
+.mini {
+  position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; gap: 8px;
+  padding: 8px max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: linear-gradient(#fffaf0, #f3efff); overflow-y: auto;
+}
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.head h2 { margin: 0; font-weight: normal; font-size: 1.3rem; color: var(--primary); }
+.quit { font: inherit; min-height: 40px; padding: 4px 14px; border: none; border-radius: var(--radius-pill); cursor: pointer; background: var(--surface-2); color: var(--text-muted); }
+.help { margin: 0; text-align: center; color: var(--text-muted); word-break: keep-all; }
+
+.sudoku {
+  --n: 4;
+  align-self: center; display: grid; grid-template-columns: repeat(var(--n), 1fr);
+  width: min(100%, 60dvh, 520px); aspect-ratio: 1; border: 4px solid var(--text); border-radius: 12px; overflow: hidden; background: #fff;
+}
+.cell {
+  font: inherit; border: 1px solid var(--grid-line); background: #fff; color: var(--primary); cursor: pointer; padding: 0;
+  font-size: clamp(1rem, calc(min(100vw, 60dvh, 520px) / var(--n) * 0.5), 2.6rem);
+}
+.given { color: var(--text); background: var(--given-bg); cursor: default; }
+.sel { background: var(--selected-bg); }
+.bad { animation: bad 0.4s; background: var(--danger-bg); }
+.boxR { border-right: 3px solid var(--text); }
+.boxB { border-bottom: 3px solid var(--text); }
+@keyframes bad { 25%, 75% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
+
+.pad { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: min(100%, 560px); align-self: center; }
+.pad4 { grid-template-columns: repeat(4, 1fr); }
+.key {
+  font: inherit; min-height: clamp(46px, 7dvh, 64px); border: none; border-radius: 14px; cursor: pointer;
+  font-size: clamp(1.4rem, 3.6dvh, 2rem); color: var(--text); background: #fff; box-shadow: 0 4px 0 var(--border);
+  touch-action: manipulation;
+}
+.key:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--border); }
+.keyFn { background: var(--surface-2); color: var(--text-muted); }
+.keyOk { background: var(--success); color: #fff; box-shadow: 0 4px 0 #1f9479; }
+
+.result { display: grid; justify-items: center; gap: 8px; font-size: 1.2rem; }
+.result p { margin: 0; }
+
+.rainBar { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 1.05rem; }
+.rainBar b { font-weight: normal; color: var(--primary); }
+.rainField {
+  position: relative; flex: 1; min-height: 220px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(#74c3ff, #dff3ff 85%, #8bd46b 85%);
+}
+.drop {
+  position: absolute; translate: -50% -100%; display: grid; place-items: center; min-width: 2.4em; min-height: 2.2em; padding: 0.25em 0.45em;
+  border-radius: 1.1em; color: #fff; font-size: clamp(1rem, 4.5vw, 1.6rem); white-space: nowrap; text-shadow: 0 1px 0 rgb(0 0 0 / 0.2);
+  background: radial-gradient(circle at 30% 22%, #b9e6ff, #47acf5 55%, #2a83d0); box-shadow: 0 3px 8px rgb(30 80 160 / 0.3);
+}
+.bomb { border-radius: 50%; background: radial-gradient(circle at 32% 28%, #7b73b0, #2f2a55 60%, #17142e); box-shadow: 0 0 0 2px #ffd166; }
+.rCount { font-size: 0.6em; white-space: normal; max-width: 4.2em; text-align: center; line-height: 1.1; }
+.rLines { display: grid; font-size: 0.65em; }
+.ground { position: absolute; left: 50%; bottom: 6px; translate: -50% 0; min-width: 2.4em; padding: 0 0.5em; border-radius: 10px; background: #fff; color: var(--primary); font-size: 1.4rem; text-align: center; box-shadow: var(--shadow-sm); }
+.cover {
+  position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 16px;
+  background: rgb(255 255 255 / 0.75); backdrop-filter: blur(3px); text-align: center; font-size: 1.2rem;
+}
+.cover p { margin: 0; word-break: keep-all; }
+.quizStage { position: relative; flex: 1; min-height: 160px; display: grid; place-items: center; border-radius: 20px; background: #fff; box-shadow: var(--shadow-sm); }
+.problem { margin: 0; font-size: clamp(2.2rem, 9vw, 4rem); color: var(--text); font-variant-numeric: tabular-nums; }
+.shake { animation: bad 0.4s; }
+
+/* 화면 크기별 덮어쓰기 — 가로 화면: 왼쪽 판 | 오른쪽 숫자 패드 (GAME_UX_GUIDE §3) */
+@media (min-aspect-ratio: 1/1) and (min-width: 560px) {
+  .mini {
+    display: grid; grid-template-columns: minmax(0, 1fr) clamp(220px, 30vw, 340px);
+    grid-template-rows: auto auto minmax(0, 1fr); column-gap: 16px; overflow: hidden;
+  }
+  .head { grid-column: 1 / -1; }
+  .mini > :nth-child(2) { grid-column: 1; grid-row: 2; }
+  .mini > :nth-child(3) { grid-column: 1; grid-row: 3; min-height: 0; }
+  .sudoku { width: auto; height: 100%; max-height: 100%; justify-self: center; }
+  .pad, .result { grid-column: 2; grid-row: 2 / 4; align-self: end; width: 100%; }
+  .pad { grid-template-columns: repeat(3, 1fr); }
+  .pad4 { grid-template-columns: repeat(2, 1fr); }
+  .key { min-height: clamp(40px, 11dvh, 72px); }
+  .result { align-self: center; }
+  .drop { font-size: clamp(1.1rem, 4dvh, 1.8rem); }
+}

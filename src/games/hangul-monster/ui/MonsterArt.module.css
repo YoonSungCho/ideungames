@@ -1,0 +1,21 @@
+/* 몬스터 그림의 작은 움직임 (그림 안 장식에만 — 버튼이 흔들리지 않게) */
+.art { overflow: visible; }
+.breathe { transform-origin: 80px 150px; animation: breathe 2.6s ease-in-out infinite; }
+.flicker { animation: flicker 0.5s ease-in-out infinite alternate; }
+.sway { animation: sway 2.4s ease-in-out infinite; }
+.twinkle { animation: twinkle 1.6s ease-in-out infinite; }
+.spin { animation: spin 6s linear infinite; }
+.blink { animation: blink 1.8s steps(1) infinite; }
+.blinkEyes { animation: eyes 4.2s infinite; }
+.aura { transform-origin: 80px 98px; animation: aura 2.2s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(1.03, 0.97); } }
+@keyframes flicker { to { transform: scale(1.08, 0.94) rotate(-3deg); } }
+@keyframes sway { 50% { transform: rotate(-7deg); } }
+@keyframes twinkle { 50% { transform: scale(1.15) rotate(12deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes blink { 50% { opacity: 0.4; } }
+@keyframes eyes { 0%, 94%, 100% { transform: none; } 97% { transform: scaleY(0.1); } }
+@keyframes aura { 50% { transform: scale(1.08); opacity: 0.28; } }
+@media (prefers-reduced-motion: reduce) {
+  .breathe, .flicker, .sway, .twinkle, .spin, .blink, .blinkEyes, .aura { animation: none; }
+}

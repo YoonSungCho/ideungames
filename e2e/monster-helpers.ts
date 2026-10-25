@@ -98,18 +98,34 @@ export async function skipBeats(page: Page) {
   }
 }
 
-/** 첫 기술로 공격하고 문제를 맞히거나(정답) 틀린다 */
-export async function useMove(page: Page, correct = true, moveIdx = 0) {
-  await page.getByRole('button', { name: '⚔️ 싸우기' }).click();
-  await page.locator('[class*="moveBtn"]').nth(moveIdx).click();
+/** 지금 나온 문제 풀기: 보기 · 글자 짓기 · 문장 순서 모두 */
+export async function solveQuestion(page: Page, correct = true) {
   const opts = page.getByRole('group', { name: '보기' });
-  await expect(opts).toBeVisible();
-  if (correct) await opts.locator('[data-correct]').click();
-  else await opts.locator('button:not([data-correct])').first().click();
+  const cho = page.getByRole('group', { name: '자음 블록' });
+  const tiles = page.getByRole('group', { name: '낱말 조각' });
+  await expect(opts.or(cho).or(tiles)).toBeVisible();
+  if (await opts.isVisible()) {
+    if (correct) await opts.locator('[data-correct]').click();
+    else await opts.locator('button:not([data-correct])').first().click();
+  } else if (await cho.isVisible()) {
+    await cho.locator(correct ? '[data-correct]' : 'button:not([data-correct])').first().click();
+    await page.getByRole('group', { name: '모음 블록' }).locator('[data-correct]').click();
+  } else {
+    const n = await tiles.locator('[data-seq]').count();
+    for (let k = 0; k < n; k++) await tiles.locator(`[data-seq="${correct ? k : n - 1 - k}"]`).click();
+  }
+}
+
+/** 기술로 공격하고 문제를 맞히거나(정답) 틀린다. move는 몇 번째 기술 또는 기술 이름 */
+export async function useMove(page: Page, correct = true, move: number | string = 0) {
+  await page.getByRole('button', { name: '⚔️ 싸우기' }).click();
+  if (typeof move === 'string') await page.getByRole('button', { name: move, exact: true }).click();
+  else await page.locator('[class*="moveBtn"]').nth(move).click();
+  await solveQuestion(page, correct);
 }
 
 /** 이길 때까지 정답으로 공격 */
-export async function winBattle(page: Page, moveIdx = 0) {
+export async function winBattle(page: Page, moveIdx: number | string = 0) {
   for (let i = 0; i < 30 && (await battle(page).isVisible()); i++) {
     await skipBeats(page);
     if (!(await battle(page).isVisible())) break;
@@ -120,4 +136,11 @@ export async function winBattle(page: Page, moveIdx = 0) {
     await useMove(page, true, moveIdx);
   }
   await expect(battle(page)).toBeHidden();
+}
+
+/** 수풀에서 왔다 갔다 하며 야생 몬스터 만나기 */
+export async function findWild(page: Page) {
+  for (let i = 0; i < 160 && !(await battle(page).isVisible()); i++) await stepDir(page, i % 2 ? '오른쪽으로' : '왼쪽으로', { mayStartBattle: true });
+  await expect(battle(page)).toBeVisible();
+  await skipBeats(page);
 }

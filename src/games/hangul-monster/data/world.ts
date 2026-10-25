@@ -1,22 +1,24 @@
+import type { Op } from '../../quick-math/engine/types';
+import type { Mode as RainMode } from '../../number-rain/engine/questions';
 import type { SpeciesId } from './species';
 
 /**
  * 걸어 다니는 지도. 한 글자 = 한 칸.
- *  # 나무  ~ 물  o 바위  C 동굴 벽  K 성벽            → 못 지나감
- *  . 풀밭  = 길  s 모래  * 꽃  _ 다리  c 동굴 바닥  k 성 바닥 → 지나감
- *  , 수풀  ; 어두운 동굴 바닥                          → 지나가면 야생 몬스터가 나올 수 있음
+ *  # 나무  ~ 물  o 바위  ^ 산  C 동굴 벽  K 성벽  W 탑 벽      → 못 지나감
+ *  . 풀밭  = 길  s 모래  * 꽃  _ 다리  c 동굴 바닥  k 성 바닥  m 탑 바닥 → 지나감
+ *  , 수풀  ; 어두운 동굴 바닥  : 톱니 바닥                     → 지나가면 야생 몬스터가 나올 수 있음
  *  L 연구소  H 우리 집  M 상점  P 몬스터 센터  G 체육관   → 부딪히면 들어감
  * 모든 지도는 위·아래 가운데 길(9번째 칸)로 이어진다.
  */
-export type MapId = 'town' | 'forest' | 'beach' | 'cave' | 'flower' | 'castle';
+export type MapId = 'town' | 'forest' | 'beach' | 'cave' | 'flower' | 'mountain' | 'tower' | 'castle';
 
 export type Building = 'lab' | 'home' | 'shop' | 'center' | 'gym';
 export const BUILDING_TILE: Record<string, Building> = { L: 'lab', H: 'home', M: 'shop', P: 'center', G: 'gym' };
 export const BUILDING_EMOJI: Record<Building, string> = { lab: '🏫', home: '🏠', shop: '🏬', center: '🏥', gym: '🏟️' };
 export const BUILDING_NAME: Record<Building, string> = { lab: '한글 연구소', home: '우리 집', shop: '상점', center: '몬스터 센터', gym: '체육관' };
 
-export const WALK = new Set(['.', '=', 's', '*', '_', 'c', 'k', ',', ';']);
-export const GRASS = new Set([',', ';']);
+export const WALK = new Set(['.', '=', 's', '*', '_', 'c', 'k', 'm', ',', ';', ':']);
+export const GRASS = new Set([',', ';', ':']);
 
 export interface Exit {
   x: number;
@@ -31,7 +33,7 @@ export interface GameMap {
   emoji: string;
   rows: string[];
   /** 바닥 기본 색 테마 */
-  theme: 'town' | 'forest' | 'beach' | 'cave' | 'flower' | 'castle';
+  theme: 'town' | 'forest' | 'beach' | 'cave' | 'flower' | 'mountain' | 'tower' | 'castle';
   exits: Exit[];
   wild?: { table: [SpeciesId, number][]; lv: [number, number] };
   /** 이 지도의 체육관 (배지 번호 0~3) */
@@ -160,8 +162,56 @@ export const MAPS: Record<MapId, GameMap> = {
       '#########=##########',
       '#########=##########',
     ],
-    exits: [TOP('castle', 14), BOTTOM(18, 'cave')],
+    exits: [TOP('mountain', 16), BOTTOM(18, 'cave')],
     wild: { table: [['sagwa', 30], ['nabi', 30], ['gureum', 30], ['mujigae', 4]], lv: [14, 17] },
+  },
+  mountain: {
+    name: '숫자 산', emoji: '⛰️', theme: 'mountain', gym: 4, heal: [14, 4],
+    rows: [
+      '^^^^^^^^^=^^^^^^^^^^',
+      '^^^^^^^^^=^^^^^^^^^^',
+      '^^,,,,...=...,,,,,^^',
+      '^^,,G....=....P.,,^^',
+      '^^.......=........^^',
+      '^^^^..,,,=,,,..^^^^^',
+      '^^....,,,=,,,.....^^',
+      '^^.oo....=......M.^^',
+      '^^.......=........^^',
+      '^^,,,,,..=..,,,,,,^^',
+      '^^,,,,,..=..,,,,,,^^',
+      '^^...^^..=..^^....^^',
+      '^^...^^..=..^^....^^',
+      '^^.......=........^^',
+      '^^,,,,...=...,,,,.^^',
+      '^^.......=........^^',
+      '^^^^^^^^^=^^^^^^^^^^',
+      '^^^^^^^^^=^^^^^^^^^^',
+    ],
+    exits: [TOP('tower', 14), BOTTOM(18, 'flower')],
+    wild: { table: [['hana', 30], ['duldul', 30], ['set', 25], ['yeong', 25], ['baekman', 4]], lv: [18, 21] },
+  },
+  tower: {
+    name: '계산 탑', emoji: '🏭', theme: 'tower', gym: 5, heal: [14, 4],
+    rows: [
+      'WWWWWWWWW=WWWWWWWWWW',
+      'WWWWWWWWW=WWWWWWWWWW',
+      'WWmmmmmmm=mmmmmmmmWW',
+      'WWmmGmmmm=mmmmPmmmWW',
+      'WWmmmmmmm=mmmmmmmmWW',
+      'WW::::WWW=WWW:::::WW',
+      'WW::::mmm=mmm:::::WW',
+      'WWmmmmmmm=mmmmmmMmWW',
+      'WWmmWWmmm=mmmWWmmmWW',
+      'WW::WW:::=:::WW:::WW',
+      'WW:::::mm=mm::::::WW',
+      'WWmmmmmmm=mmmmmmmmWW',
+      'WW::::mmm=mmm::::mWW',
+      'WWmmmmmmm=mmmmmmmmWW',
+      'WWWWWWWWW=WWWWWWWWWW',
+      'WWWWWWWWW=WWWWWWWWWW',
+    ],
+    exits: [TOP('castle', 14), BOTTOM(16, 'mountain')],
+    wild: { table: [['deohagi', 35], ['ppaegi', 35], ['gopsem', 30], ['nanugi', 4]], lv: [21, 24] },
   },
   castle: {
     name: '뒤죽박죽 성', emoji: '🏰', theme: 'castle', heal: [12, 10],
@@ -183,7 +233,7 @@ export const MAPS: Record<MapId, GameMap> = {
       'KKKKKKKKKkKKKKKKKKKK',
       'KKKKKKKKKkKKKKKKKKKK',
     ],
-    exits: [BOTTOM(16, 'flower')],
+    exits: [BOTTOM(16, 'tower')],
   },
 };
 
@@ -192,6 +242,8 @@ export const BADGES = [
   { name: '모음 배지', icon: '💧' },
   { name: '받침 배지', icon: '🪨' },
   { name: '낱말 배지', icon: '🌿' },
+  { name: '숫자 배지', icon: '⚡' },
+  { name: '계산 배지', icon: '⚙️' },
 ] as const;
 
 /** 대사 한 줄. who가 없으면 해설 */
@@ -209,8 +261,16 @@ export interface Npc {
   y: number;
   emoji: string;
   name: string;
-  /** talk: 말만, trainer: 승부, gym: 관장(건물 안), item: 땅에 떨어진 물건, guard: 배지가 있어야 비켜 줌 */
-  kind: 'talk' | 'trainer' | 'gym' | 'item' | 'guard' | 'boss';
+  /**
+   * talk: 말만, trainer: 승부, gym: 관장(건물 안), item: 땅에 떨어진 물건, guard: 배지가 있어야 비켜 줌,
+   * puzzle: 스도쿠 상자(한 번), rain: 숫자 비 놀이, quiz: 빠른 계산 대결 (여러 번)
+   */
+  kind: 'talk' | 'trainer' | 'gym' | 'item' | 'guard' | 'boss' | 'puzzle' | 'rain' | 'quiz';
+  puzzle?: { size: 4 | 9; difficulty: 'easy' | 'medium' | 'hard' };
+  rain?: { mode: RainMode; goal: number };
+  quiz?: { ops: Op[]; difficulty: 'easy' | 'medium' | 'hard' };
+  /** 상자를 열거나 처음 목표를 이뤘을 때 받는 것 */
+  reward?: { coins?: number; items?: Partial<Record<ItemId, number>> };
   lines: Line[];
   /** 이긴 뒤 다시 말 걸면 */
   after?: Line[];
@@ -317,7 +377,7 @@ export const NPCS: Npc[] = [
   },
 
   // 낱말 꽃밭
-  { id: 'flower-guard', map: 'flower', x: 9, y: 1, emoji: '💂', name: '꽃밭 지기', kind: 'guard', needBadges: 4, lines: [{ who: '꽃밭 지기', text: '저 위가 뒤죽박죽 성이야! 배지 4개를 모은 진짜 용사만 갈 수 있어.' }] },
+  { id: 'flower-guard', map: 'flower', x: 9, y: 1, emoji: '💂', name: '꽃밭 지기', kind: 'guard', needBadges: 4, lines: [{ who: '꽃밭 지기', text: '저 위는 숫자 산이야. 배지 4개를 모은 트레이너만 갈 수 있어!' }] },
   {
     id: 'flower-artist', map: 'flower', x: 4, y: 11, emoji: '👩‍🎨', name: '화가 누리', kind: 'trainer',
     lines: [{ who: '화가 누리', text: '그림을 보고 낱말을 읽을 수 있니? 승부!' }],
@@ -334,38 +394,107 @@ export const NPCS: Npc[] = [
   {
     id: 'gym3', map: 'flower', x: 4, y: 3, emoji: '🧝', name: '낱말 관장 꽃잎', kind: 'gym',
     lines: [{ who: '낱말 관장 꽃잎', text: '자음과 모음과 받침이 모이면 낱말이 피어나지. 마지막 배지를 걸고 승부!' }],
-    after: [{ who: '낱말 관장 꽃잎', text: '낱말 배지 🌿! 이제 배지 4개야. 뒤죽박죽 성으로 가서 한글을 되찾아 줘!' }],
+    after: [{ who: '낱말 관장 꽃잎', text: '낱말 배지 🌿! 이제 숫자 산으로 가 봐. 뒤죽박죽단이 숫자까지 섞으려 한대!' }],
     team: [['nabi', 18], ['mujigae', 19]],
   },
+
+  // 숫자 산
+  { id: 'mountain-guard', map: 'mountain', x: 9, y: 1, emoji: '💂', name: '산 지기', kind: 'guard', needBadges: 5, lines: [{ who: '산 지기', text: '계산 탑은 숫자 배지 ⚡를 가진 트레이너만 오를 수 있어!' }] },
+  {
+    id: 'mountain-hiker', map: 'mountain', x: 3, y: 8, emoji: '🧗‍♀️', name: '등산가 하나', kind: 'trainer',
+    lines: [{ who: '등산가 하나', text: '산을 오르며 하나, 둘, 셋! 숫자 승부다!' }],
+    after: [{ who: '등산가 하나', text: '숫자를 정말 잘 세는구나!' }],
+    team: [['duldul', 19], ['set', 20]],
+  },
+  {
+    id: 'mountain-kid', map: 'mountain', x: 15, y: 13, emoji: '🧑‍🎓', name: '숫자 박사 꼬마', kind: 'trainer',
+    lines: [{ who: '숫자 박사 꼬마', text: '삼십사를 숫자로 쓸 줄 알아? 나랑 겨뤄 보자!' }],
+    after: [{ who: '숫자 박사 꼬마', text: '자릿수까지 척척! 대단해!' }],
+    team: [['yeong', 20], ['hana', 21]],
+  },
+  {
+    id: 'mountain-rain', map: 'mountain', x: 11, y: 7, emoji: '🧙‍♂️', name: '숫자 비 할아버지', kind: 'rain', rain: { mode: 'addsub20', goal: 12 },
+    lines: [{ who: '숫자 비 할아버지', text: '하늘에서 계산 비가 내린단다! 땅에 닿기 전에 답을 눌러 펑! 12개를 터뜨리면 선물을 주마.' }],
+    reward: { items: { ball: 5, bigPotion: 1 } },
+  },
+  { id: 'mountain-box', map: 'mountain', x: 3, y: 13, emoji: '🧩', name: '스도쿠 상자', kind: 'puzzle', puzzle: { size: 4, difficulty: 'hard' }, lines: [], reward: { coins: 300, items: { ball: 3 } } },
+  {
+    id: 'gym4', map: 'mountain', x: 4, y: 3, emoji: '🧑‍🔬', name: '숫자 관장 번쩍', kind: 'gym',
+    lines: [{ who: '숫자 관장 번쩍', text: '세고, 읽고, 자릿수까지! 번개처럼 빠른 숫자 승부다!' }],
+    after: [{ who: '숫자 관장 번쩍', text: '숫자 배지 ⚡를 받아! 계산 탑이 너를 기다려.' }],
+    team: [['set', 22], ['beongae', 23]],
+  },
+
+  // 계산 탑
+  { id: 'tower-guard', map: 'tower', x: 9, y: 1, emoji: '💂', name: '탑 지기', kind: 'guard', needBadges: 6, lines: [{ who: '탑 지기', text: '저 위가 뒤죽박죽 성이야! 배지 6개를 모은 진짜 챔피언만 갈 수 있어.' }] },
+  {
+    id: 'tower-robot', map: 'tower', x: 3, y: 7, emoji: '🧑‍🔧', name: '로봇 기술자 철이', kind: 'trainer',
+    lines: [{ who: '철이', text: '더하기봇, 출동! 받아올림까지 해낼 수 있어?' }],
+    after: [{ who: '철이', text: '내 로봇보다 계산이 빠르다니!' }],
+    team: [['deohagi', 22], ['ppaegi', 23]],
+  },
+  {
+    id: 'tower-girl', map: 'tower', x: 15, y: 11, emoji: '👩‍💻', name: '프로그래머 예나', kind: 'trainer',
+    lines: [{ who: '예나', text: '구구단 2단부터 9단까지, 다 외웠니?' }],
+    after: [{ who: '예나', text: '구구단 마스터 인정!' }],
+    team: [['gopsem', 23], ['deohagi', 24]],
+  },
+  {
+    id: 'tower-quiz', map: 'tower', x: 11, y: 11, emoji: '🧑‍⚖️', name: '빠른 계산 시험관', kind: 'quiz', quiz: { ops: ['mul', 'div'], difficulty: 'easy' },
+    lines: [{ who: '빠른 계산 시험관', text: '곱셈·나눗셈 10문제! 빨리 풀수록 코인을 많이 준다. 시작!' }],
+    reward: { items: { bigPotion: 2 } },
+  },
+  { id: 'tower-box', map: 'tower', x: 17, y: 12, emoji: '🧩', name: '큰 스도쿠 상자', kind: 'puzzle', puzzle: { size: 9, difficulty: 'easy' }, lines: [], reward: { coins: 600, items: { bigPotion: 3 } } },
+  {
+    id: 'gym5', map: 'tower', x: 4, y: 3, emoji: '🤖', name: '계산 관장 척척', kind: 'gym',
+    lines: [{ who: '계산 관장 척척', text: '더하기, 빼기, 곱하기, 나누기! 계산 탑 꼭대기의 관장, 척척이다!' }],
+    after: [{ who: '계산 관장 척척', text: '계산 배지 ⚙️! 배지 6개를 다 모았구나. 뒤죽박죽 성으로 가라!' }],
+    team: [['gopsem', 25], ['gugu', 26]],
+  },
+
+  // 앞 지도들의 놀이
+  { id: 'forest-box', map: 'forest', x: 3, y: 5, emoji: '🧩', name: '스도쿠 상자', kind: 'puzzle', puzzle: { size: 4, difficulty: 'easy' }, lines: [], reward: { items: { ball: 3 } } },
+  {
+    id: 'forest-rain', map: 'forest', x: 11, y: 14, emoji: '👦', name: '숫자 비 꼬마', kind: 'rain', rain: { mode: 'digit', goal: 10 },
+    lines: [{ who: '숫자 비 꼬마', text: '하늘에서 숫자 비가 내려! 같은 숫자를 눌러서 10개 터뜨려 볼래?' }],
+    reward: { items: { ball: 3, potion: 2 } },
+  },
+  { id: 'beach-box', map: 'beach', x: 17, y: 12, emoji: '🧩', name: '스도쿠 상자', kind: 'puzzle', puzzle: { size: 4, difficulty: 'medium' }, lines: [], reward: { items: { bigPotion: 2 } } },
+  {
+    id: 'beach-quiz', map: 'beach', x: 7, y: 4, emoji: '🧑‍🍳', name: '조개 가게 주인', kind: 'quiz', quiz: { ops: ['add', 'sub'], difficulty: 'easy' },
+    lines: [{ who: '조개 가게 주인', text: '조개 값 계산을 도와줄래? 더하기·빼기 10문제, 빨리 풀면 코인을 듬뿍 줄게!' }],
+    reward: { items: { ball: 5 } },
+  },
+  { id: 'cave-box', map: 'cave', x: 2, y: 13, emoji: '🧩', name: '스도쿠 상자', kind: 'puzzle', puzzle: { size: 4, difficulty: 'hard' }, lines: [], reward: { coins: 200 } },
 
   // 뒤죽박죽 성
   {
     id: 'grunt2', map: 'castle', x: 9, y: 11, emoji: '🦹', name: '뒤죽박죽단 졸개', kind: 'trainer', leaves: true, villain: true,
     lines: [V('여기까지 오다니! 하지만 성 안은 못 들어가!')],
     after: [V('으악! 비켜 줄게!')],
-    team: [['eongmang', 18], ['dwijuk', 19]],
+    team: [['eongmang', 25], ['dwijuk', 26]],
   },
   {
     id: 'grunt3', map: 'castle', x: 9, y: 8, emoji: '🦹‍♀️', name: '뒤죽박죽단 간부 박죽', kind: 'trainer', leaves: true, villain: true,
     lines: [V('나는 간부 박죽! 글자를 뒤섞는 건 내 특기지!')],
     after: [V('말도 안 돼… 대장님, 조심하세요!')],
-    team: [['bakjuk', 20], ['eongmang', 20]],
+    team: [['bakjuk', 27], ['eongmang', 27]],
   },
   {
     id: 'grunt4', map: 'castle', x: 9, y: 5, emoji: '🦹‍♂️', name: '뒤죽박죽단 간부 뒤죽', kind: 'trainer', leaves: true, villain: true,
     lines: [V('나는 간부 뒤죽! 대장님께 가려면 나를 넘어야 해!')],
     after: [V('크윽… 네 한글 실력, 인정한다!')],
-    team: [['dwijuk', 21], ['bakjuk', 21]],
+    team: [['dwijuk', 28], ['bakjuk', 28]],
   },
   {
     id: 'boss', map: 'castle', x: 9, y: 3, emoji: '👺', name: '뒤죽박죽 대장', kind: 'boss', villain: true,
     lines: [
       V('하하하! 네가 소문의 꼬마 트레이너로구나.'),
-      V('한글이 엉망이 되면 아무도 책을 못 읽고, 편지도 못 쓰지! 그게 내 계획이다!'),
+      V('한글과 숫자가 엉망이 되면 아무도 책을 못 읽고, 셈도 못 하지! 그게 내 계획이다!'),
       V('내 뒤죽박죽킹을 이길 수 있을까? 덤벼라!'),
     ],
     after: [{ who: '뒤죽박죽 대장', text: '으아아… 한글이… 다시 반짝반짝해진다…!', villain: true }],
-    team: [['eongmang', 22], ['dwijuk', 23], ['king', 25]],
+    team: [['eongmang', 29], ['dwijuk', 30], ['king', 32]],
   },
 ];
 

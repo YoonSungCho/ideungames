@@ -1,0 +1,14 @@
+.trainer { width: 92%; height: auto; overflow: visible; }
+.flip { transform: scaleX(-1); }
+.legA, .legB, .armA, .armB { transform-box: fill-box; transform-origin: 50% 0; }
+.walking .legA, .walking .armB { animation: swingA 0.3s ease-in-out infinite alternate; }
+.walking .legB, .walking .armA { animation: swingB 0.3s ease-in-out infinite alternate; }
+.walking { animation: bounce 0.3s ease-in-out infinite alternate; }
+.walking.flip { animation-name: bounceFlip; }
+@keyframes swingA { from { transform: rotate(18deg); } to { transform: rotate(-18deg); } }
+@keyframes swingB { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+@keyframes bounce { to { translate: 0 -2px; } }
+@keyframes bounceFlip { to { translate: 0 -2px; } }
+@media (prefers-reduced-motion: reduce) {
+  .walking, .walking .legA, .walking .legB, .walking .armA, .walking .armB { animation: none; }
+}

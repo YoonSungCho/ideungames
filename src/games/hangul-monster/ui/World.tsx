@@ -1,19 +1,15 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { BUILDING_EMOJI, BUILDING_NAME, BUILDING_TILE, MAPS, type MapId } from '../data/world';
+import { BUILDING_NAME, BUILDING_TILE, MAPS, type MapId } from '../data/world';
+import { MapArt } from './MapArt';
 import { findPath, visibleNpcs, type Dir } from '../engine/world';
 import { flagsOf, useHangulMonster } from '../store';
+import { MonsterArt } from './MonsterArt';
+import { Trainer } from './Trainer';
 import styles from './HangulMonster.module.css';
 
 const STEP_MS = 150;
 
-/** 칸 그림: 나무·물·수풀은 이모지, 바닥은 색 */
-const DECOR: Record<string, string> = { '#': '🌳', ',': '🌿', '*': '🌼', o: '🪨', ';': '·' };
-const TILE_CLASS: Record<string, string> = {
-  '#': 'tTree', '~': 'tWater', '.': 'tGrass', '=': 'tPath', s: 'tSand', '*': 'tFlower', _: 'tBridge', c: 'tCave', C: 'tCaveWall',
-  k: 'tCastle', K: 'tCastleWall', ',': 'tTall', ';': 'tDark', o: 'tGrass', L: 'tPath', H: 'tPath', M: 'tPath', P: 'tPath', G: 'tPath', f: 'tGrass',
-};
-
-/** 지도 바닥 (지도가 바뀔 때만 다시 그림) */
+/** 누를 수 있는 칸 (그림은 MapArt가 그린다). 지도가 바뀔 때만 다시 만든다 */
 const Tiles = memo(function Tiles({ map, onTap }: { map: MapId; onTap: (x: number, y: number) => void }) {
   const m = MAPS[map];
   return (
@@ -24,47 +20,19 @@ const Tiles = memo(function Tiles({ map, onTap }: { map: MapId; onTap: (x: numbe
           return (
             <div
               key={`${x},${y}`}
-              className={[styles.tile, styles[TILE_CLASS[t] ?? 'tGrass'], b && styles.building].filter(Boolean).join(' ')}
+              className={[styles.tile, b && styles.building].filter(Boolean).join(' ')}
               style={{ '--x': x, '--y': y } as CSSProperties}
               data-xy={`${x},${y}`}
               onClick={() => onTap(x, y)}
               aria-label={b ? BUILDING_NAME[b] : undefined}
               role={b ? 'button' : undefined}
-            >
-              {b ? <span className={styles.buildingEmoji}>{BUILDING_EMOJI[b]}</span> : DECOR[t] && <span className={styles.decor}>{DECOR[t]}</span>}
-            </div>
+            />
           );
         }),
       )}
     </>
   );
 });
-
-/** 주인공 (모자 쓴 아이). 방향에 따라 앞·뒤·옆 */
-function Player({ dir, walking }: { dir: Dir; walking: boolean }) {
-  const back = dir === 'up';
-  const side = dir === 'left' || dir === 'right';
-  return (
-    <svg viewBox="0 0 40 48" className={[styles.playerSvg, walking && styles.walking, dir === 'left' && styles.faceLeft].filter(Boolean).join(' ')} aria-hidden>
-      <ellipse cx="20" cy="45" rx="11" ry="3" fill="#000" opacity="0.15" />
-      <rect x="12" y="26" width="16" height="15" rx="6" fill="#3f9cf5" stroke="#3b3567" strokeWidth="2" />
-      <rect x="13" y="38" width="5" height="7" rx="2" fill="#3b3567" />
-      <rect x="22" y="38" width="5" height="7" rx="2" fill="#3b3567" />
-      <circle cx="20" cy="18" r="11" fill="#ffd9b8" stroke="#3b3567" strokeWidth="2" />
-      {back && <path d="M9 18 Q20 30 31 18 L31 14 Q20 10 9 14 Z" fill="#5b3a29" />}
-      {!back && !side && (
-        <>
-          <circle cx="16" cy="19" r="1.8" fill="#3b3567" />
-          <circle cx="24" cy="19" r="1.8" fill="#3b3567" />
-          <path d="M17 24 Q20 26 23 24" stroke="#3b3567" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-        </>
-      )}
-      {side && <circle cx="26" cy="19" r="1.8" fill="#3b3567" />}
-      <path d="M8 15 Q8 5 20 5 Q32 5 32 15 Z" fill="#ef476f" stroke="#3b3567" strokeWidth="2" strokeLinejoin="round" />
-      {!back && <path d={side ? 'M24 14 L37 15 L32 17 L24 16 Z' : 'M11 15 L29 15 L27 18 L13 18 Z'} fill="#c9184a" stroke="#3b3567" strokeWidth="1.5" />}
-    </svg>
-  );
-}
 
 /** 걸어 다니는 지도: 누른 칸까지 걸어가거나, 방향 버튼·화살표 키로 움직인다 */
 export function World() {
@@ -77,11 +45,20 @@ export function World() {
   const picked = useHangulMonster((s) => s.picked);
   const party = useHangulMonster((s) => s.party);
   const toast = useHangulMonster((s) => s.toast);
-  const busy = useHangulMonster((s) => !!(s.dialog || s.battle || s.overlay));
+  const busy = useHangulMonster((s) => !!(s.dialog || s.battle || s.overlay || s.mini));
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [walking, setWalking] = useState(false);
   const queue = useRef<Dir[]>([]);
+  // 맨 앞 친구가 한 칸 뒤에서 따라온다
+  const [follow, setFollow] = useState({ map, x, y });
+  const last = useRef({ map, x, y });
+  useEffect(() => {
+    const prev = last.current;
+    if (prev.map !== map) setFollow({ map, x, y });
+    else if (prev.x !== x || prev.y !== y) setFollow(prev);
+    last.current = { map, x, y };
+  }, [map, x, y]);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useLayoutEffect(() => {
@@ -114,7 +91,7 @@ export function World() {
   const onTap = useCallback(
     (tx: number, ty: number) => {
       const s = useHangulMonster.getState();
-      if (s.dialog || s.battle || s.overlay) return;
+      if (s.dialog || s.battle || s.overlay || s.mini) return;
       stop();
       const path = findPath(s.map, [s.x, s.y], [tx, ty], flagsOf(s));
       if (!path?.length) return;
@@ -187,6 +164,7 @@ export function World() {
     <div ref={ref} className={[styles.world, styles[`theme_${m.theme}`]].join(' ')} data-world>
       {size.w > 0 && (
         <div className={styles.mapLayer} style={{ width: mapW, height: mapH, transform: `translate(${camX}px, ${camY}px)`, '--t': `${T}px` } as CSSProperties}>
+          <MapArt map={map} />
           <Tiles map={map} onTap={onTap} />
           {npcs.map((n) => (
             // 지도 칸처럼 다룬다 (카메라 밖에 있는 건 화면 밖이 맞음)
@@ -202,8 +180,13 @@ export function World() {
               {(n.kind === 'trainer' || n.kind === 'boss') && !defeated.includes(n.id) && <span className={styles.alert} aria-hidden>❗</span>}
             </div>
           ))}
+          {party[0] && follow.map === map && (
+            <div className={styles.follower} style={{ '--x': follow.x, '--y': follow.y } as CSSProperties} aria-hidden>
+              <MonsterArt sp={party[0].sp} size={T} animate={walking} />
+            </div>
+          )}
           <div className={styles.player} style={{ '--x': x, '--y': y } as CSSProperties} data-player={`${x},${y}`}>
-            <Player dir={dir} walking={walking} />
+            <Trainer dir={dir} walking={walking} />
           </div>
         </div>
       )}

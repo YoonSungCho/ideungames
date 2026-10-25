@@ -33,29 +33,16 @@
 .world { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #6fbf4f; touch-action: none; }
 .theme_cave { background: #2b2438; }
 .theme_castle { background: #2d2347; }
+.theme_tower { background: #3e4757; }
+.theme_mountain { background: #8a7a66; }
 .theme_beach { background: #2f86e8; }
 .mapLayer { position: absolute; left: 0; top: 0; transition: transform 0.15s linear; }
-.tile, .npc, .player {
+.tile, .npc, .player, .follower {
   position: absolute; left: calc(var(--x) * var(--t)); top: calc(var(--y) * var(--t));
   width: var(--t); height: var(--t);
 }
-.tile { display: grid; place-items: center; font-size: calc(var(--t) * 0.72); line-height: 1; user-select: none; }
-.decor { pointer-events: none; }
-.tGrass { background: #8bd46b; }
-.tPath { background: #f1dca7; }
-.tSand { background: #f8e7b0; }
-.tFlower { background: #9bdc7c; font-size: calc(var(--t) * 0.5); }
-.tTall { background: #6cbf4d; font-size: calc(var(--t) * 0.8); }
-.tTree { background: #5fae3e; font-size: calc(var(--t) * 0.95); }
-.tWater { background: repeating-linear-gradient(170deg, #4fb2f5 0 10px, #62bdf7 10px 20px); }
-.tBridge { background: repeating-linear-gradient(90deg, #b5804f 0 6px, #9c6a3d 6px 8px); }
-.tCave { background: #6b5a52; }
-.tCaveWall { background: linear-gradient(#3b302f, #2a2222); box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.25); }
-.tDark { background: #4f4240; color: #8a7a70; font-size: calc(var(--t) * 0.9); }
-.tCastle { background: repeating-conic-gradient(#5b4a8a 0 25%, #4f3f7d 0 50%) 0 0 / 50% 50%; }
-.tCastleWall { background: #2d2347; box-shadow: inset 0 -6px 0 #1f1835, inset 0 0 0 2px #3b2f60; }
+.tile { z-index: 1; }
 .building { cursor: pointer; z-index: 1; }
-.buildingEmoji { font-size: calc(var(--t) * 1.25); translate: 0 -12%; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 .npc {
   z-index: 2; display: grid; place-items: center; padding: 0; border: none; background: none; cursor: pointer;
   font-size: calc(var(--t) * 0.8); line-height: 1;
@@ -65,12 +52,8 @@
 @keyframes twinkle { 50% { transform: scale(0.75); opacity: 0.7; } }
 .alert { position: absolute; top: -40%; left: 50%; translate: -50% 0; font-size: 0.55em; animation: bob 1s ease-in-out infinite; }
 .player { z-index: 3; display: grid; place-items: end center; pointer-events: none; transition: left 0.15s linear, top 0.15s linear; }
-.playerSvg { width: 86%; height: auto; overflow: visible; }
-.faceLeft { transform: scaleX(-1); }
-.walking { animation: step 0.3s steps(2) infinite; }
-.walking.faceLeft { animation-name: stepFlip; }
-@keyframes step { 50% { translate: 0 -3px; } }
-@keyframes stepFlip { 50% { translate: 0 -3px; } }
+.follower { z-index: 2; display: grid; place-items: end center; pointer-events: none; transition: left 0.15s linear, top 0.15s linear; }
+.follower svg { width: 92%; height: auto; translate: 0 6%; }
 .toast {
   position: absolute; top: 12px; left: 50%; translate: -50% 0; margin: 0; z-index: 5;
   padding: 8px 18px; border-radius: var(--radius-pill); white-space: nowrap;
@@ -131,15 +114,18 @@
 .arena_cave { background: linear-gradient(#3b302f 0 45%, #6b5a52 45%); }
 .arena_castle { background: linear-gradient(#2d2347 0 45%, #5b4a8a 45%); }
 .arena_flower { background: linear-gradient(#ffe3f1 0 45%, #9bdc7c 45%); }
+.arenaWrap { position: relative; min-height: 0; overflow: hidden; display: grid; }
 .arena {
+  position: relative; z-index: 1;
   min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
   align-items: center; padding: 8px max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left));
   gap: 4px 8px; max-width: 900px; width: 100%; margin: 0 auto;
 }
 .foeSpot, .mySpot { position: relative; display: grid; place-items: center; height: 100%; min-height: 0; }
 .foeSpot::after, .mySpot::after {
-  content: ''; position: absolute; bottom: 6%; width: 80%; height: 16%; border-radius: 50%;
-  background: rgb(0 0 0 / 0.12); z-index: 0;
+  content: ''; position: absolute; bottom: 4%; width: 86%; height: 18%; border-radius: 50%; z-index: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.15) 60%, rgb(0 0 0 / 0.12) 61%, rgb(0 0 0 / 0.05));
+  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.08);
 }
 .foeArt, .myArt { position: relative; z-index: 1; display: grid; place-items: center; }
 .foeArt svg, .myArt svg { width: clamp(80px, min(22dvh, 36vw), 240px); height: auto; }
@@ -328,7 +314,7 @@
 .certSmall { color: var(--text-muted); font-size: 0.9rem; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bob, .item .npcEmoji, .alert, .walking, .more { animation: none; }
+  .bob, .item .npcEmoji, .alert, .more { animation: none; }
 }
 
 /* ───────── 화면 크기별 덮어쓰기 (기본 규칙보다 뒤에 있어야 적용됨) ───────── */
@@ -362,4 +348,78 @@
   .question { gap: 4px; }
   .qPrompt { padding: 4px 10px 8px; }
   .line { min-height: 0; }
+}
+
+/* ───────── 문제: 개수 세기 · 글자 짓기 · 문장 순서 ───────── */
+.qCount { font-size: clamp(1.6rem, 4.6dvh, 2.4rem); letter-spacing: 0.05em; max-width: 9em; word-break: break-all; line-height: 1.2; }
+.build, .order { display: grid; gap: 8px; }
+.buildPreview, .sentence {
+  min-height: 56px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px;
+  border-radius: 16px; background: #fff; box-shadow: var(--shadow-sm); font-size: clamp(1.8rem, 5dvh, 2.6rem); color: var(--text);
+}
+.sentence { font-size: clamp(1.1rem, 3dvh, 1.4rem); padding: 6px; }
+.slot { min-width: 3.2em; min-height: 1.6em; padding: 2px 8px; border-radius: 10px; border-bottom: 3px dashed var(--border); text-align: center; }
+.buildRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.block {
+  font: inherit; min-height: clamp(48px, 7.5dvh, 66px); border: none; border-radius: 14px; cursor: pointer;
+  font-size: clamp(1.6rem, 4.4dvh, 2.2rem); color: var(--text); box-shadow: 0 4px 0 var(--border);
+}
+.blockC { background: #ffe8dc; }
+.blockV { background: #dcefff; }
+.blockOn { box-shadow: inset 0 0 0 3px var(--primary), 0 4px 0 var(--primary-shadow); }
+.wordTiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.wordTile {
+  font: inherit; min-height: 48px; padding: 6px 14px; border: none; border-radius: 14px; cursor: pointer;
+  font-size: clamp(1.1rem, 3dvh, 1.4rem); background: #fff; color: var(--text); box-shadow: 0 4px 0 var(--border);
+}
+.wordTileUsed { opacity: 0.25; }
+.wordTileUndo { background: var(--surface-2); color: var(--text-muted); }
+@media (max-height: 500px) {
+  .buildPreview, .sentence { min-height: 44px; font-size: 1.6rem; }
+  .sentence { font-size: 1.05rem; }
+  .block { min-height: 42px; font-size: 1.5rem; }
+  .wordTile { min-height: 42px; }
+}
+
+/* ───────── 🗺️ 전체 지도 ───────── */
+.goalBox { margin: 0; padding: 10px 14px; border-radius: 14px; background: #fff4d6; color: #6b4400; text-align: left; word-break: keep-all; }
+.goalBox b { font-weight: normal; color: #c27c00; margin-right: 4px; }
+.mapSplit { display: grid; gap: 10px; }
+.route { list-style: none; margin: 0; padding: 0 0 0 14px; display: grid; gap: 4px; position: relative; }
+.route::before { content: ''; position: absolute; left: 30px; top: 18px; bottom: 18px; border-left: 4px dotted #c9bfe8; }
+.routeNode { position: relative; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 10px; border-radius: 14px; background: var(--surface-2); text-align: left; }
+.routeEmoji { position: relative; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); font-size: 1.1rem; flex: none; }
+.routeName { flex: 1; white-space: nowrap; }
+.routeBadge { font-size: 1.1rem; min-width: 1.2em; text-align: center; color: var(--text-muted); }
+.routeHere { background: var(--selected-bg); box-shadow: inset 0 0 0 2px var(--primary); }
+.routeGoal { box-shadow: inset 0 0 0 2px #f5b301; }
+.routeHere.routeGoal { box-shadow: inset 0 0 0 2px var(--primary), 0 0 0 2px #f5b301; }
+.routeLocked { opacity: 0.55; }
+.here { font-size: 0.85rem; color: var(--primary); white-space: nowrap; }
+.goalTag { font-size: 1rem; }
+.miniMapWrap { display: grid; gap: 4px; }
+.miniTitle, .miniHint { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+.miniMap { position: relative; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.mmMe, .mmGoal, .mmIcon { position: absolute; translate: -50% -50%; pointer-events: none; }
+.mmMe { width: 14px; height: 14px; border-radius: 50%; background: #ef476f; box-shadow: 0 0 0 3px #fff, 0 0 0 5px #ef476f; animation: ping 1.2s ease-in-out infinite; }
+.mmGoal { font-size: 1.3rem; animation: bob 1s ease-in-out infinite; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.3)); }
+.mmIcon { font-size: 0.9rem; }
+@keyframes ping { 50% { box-shadow: 0 0 0 3px #fff, 0 0 0 9px rgb(239 71 111 / 0.3); } }
+
+/* 걷는 화면의 목표 버튼 */
+.goalChip {
+  position: absolute; z-index: 4; right: max(10px, env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom));
+  max-width: min(55%, 320px); display: flex; align-items: center; gap: 6px; padding: 8px 12px; min-height: 44px;
+  font: inherit; font-size: 0.95rem; text-align: left; border: none; border-radius: 16px; cursor: pointer;
+  background: rgb(255 244 214 / 0.95); color: #6b4400; box-shadow: var(--shadow-sm); word-break: keep-all; line-height: 1.3;
+}
+.goalChip b { font-weight: normal; font-size: 1.2rem; }
+
+@media (min-width: 600px), (min-aspect-ratio: 6/5) and (max-height: 600px) {
+  .mapSplit { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; }
+}
+@media (max-height: 500px) {
+  .routeNode { min-height: 32px; padding: 2px 8px; }
+  .routeEmoji { width: 26px; height: 26px; font-size: 0.95rem; }
+  .goalChip { font-size: 0.85rem; padding: 6px 10px; }
 }

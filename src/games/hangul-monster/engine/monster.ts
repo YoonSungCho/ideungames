@@ -9,7 +9,7 @@ export interface Mon {
   hp: number;
 }
 
-export const MAX_LEVEL = 30;
+export const MAX_LEVEL = 40;
 export const PARTY_MAX = 6;
 
 export const maxHp = (m: Pick<Mon, 'sp' | 'lv'>) => Math.round(species(m.sp).hp * (1 + (m.lv - 1) * 0.18));

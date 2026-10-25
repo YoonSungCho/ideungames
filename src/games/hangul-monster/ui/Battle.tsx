@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { josa } from '@/shared/korean';
-import type { QuestionType } from '../../hangul-hero/engine/types';
+import type { MoveQ } from '../engine/mathQuestions';
 import { ELEM_INFO, move, movesAt, species, type MoveId } from '../data/species';
 import { ITEMS, MAPS } from '../data/world';
 import { maxHp, xpNeed, type Mon } from '../engine/monster';
 import { currentBeat, useHangulMonster } from '../store';
+import { BattleBackdrop } from './BattleBackdrop';
 import { MonsterArt } from './MonsterArt';
 import { QuestionPanel } from './QuestionPanel';
 import styles from './HangulMonster.module.css';
@@ -12,11 +13,13 @@ import styles from './HangulMonster.module.css';
 /** 장면 하나를 보여 주는 시간 (누르면 바로 다음) */
 const BEAT_MS = 1300;
 
-export const Q_HINT: Record<QuestionType, string> = {
+export const Q_HINT: Record<MoveQ, string> = {
   listenConsonant: '자음 소리 듣기', firstSound: '첫소리 찾기', listenVowel: '모음 소리 듣기', syllableVowel: '모음 찾기',
   combine: '글자 만들기', build: '글자 만들기', batchimRead: '받침 낱말 읽기', batchimPick: '받침 찾기',
   pictureWord: '그림 낱말 읽기', missingSyllable: '빈칸 글자', sentenceBlank: '문장 빈칸', sentenceOrder: '문장 순서',
   oppositePick: '반대말', oppositeSentence: '반대말', categoryPick: '무리 짓기', oddOneOut: '무리 짓기',
+  count: '개수 세기', numWord: '숫자 읽기', place: '자릿수', add10: '더하기', sub10: '빼기', addsub20: '받아올림·내림',
+  mul: '구구단', div: '나눗셈', two: '두 자리 계산',
 };
 
 export function HpBar({ m, showNumber }: { m: Mon; showNumber?: boolean }) {
@@ -77,11 +80,13 @@ export function BattleScreen() {
 
   return (
     <div className={[styles.battle, styles[`arena_${MAPS[map].theme}`]].join(' ')} data-battle>
+      <div className={styles.arenaWrap}>
+      <BattleBackdrop theme={MAPS[map].theme} />
       <div className={styles.arena}>
         <MonCard m={foe} />
         <div className={styles.foeSpot}>
           <div className={[styles.foeArt, fx && styles[`fx_${fx}`]].filter(Boolean).join(' ')} key={`foe${view.foeIdx}`}>
-            {ballOut ? <span className={[styles.ball, fx === 'wobble' && styles.ballWobble, fx === 'caught' && styles.ballCaught].filter(Boolean).join(' ')} key={b.beatIdx}>🔴</span> : <MonsterArt sp={foe.sp} size={140} />}
+            {ballOut ? <span className={[styles.ball, fx === 'wobble' && styles.ballWobble, fx === 'caught' && styles.ballCaught].filter(Boolean).join(' ')} key={b.beatIdx}>🔴</span> : <MonsterArt sp={foe.sp} size={140} animate />}
             {viewing && fx === 'foeHit' && beat.dmg !== undefined && (
               <span className={[styles.dmg, beat.tag && styles[`tag_${beat.tag}`]].filter(Boolean).join(' ')} key={`d${b.beatIdx}`}>-{beat.dmg}</span>
             )}
@@ -89,11 +94,12 @@ export function BattleScreen() {
         </div>
         <div className={styles.mySpot}>
           <div className={[styles.myArt, fx && styles[`fx_${fx}`]].filter(Boolean).join(' ')} key={`me${view.myIdx}`}>
-            <MonsterArt sp={my.sp} size={150} />
+            <MonsterArt sp={my.sp} size={150} animate />
             {viewing && fx === 'myHit' && beat.dmg !== undefined && <span className={styles.dmg} key={`d${b.beatIdx}`}>-{beat.dmg}</span>}
           </div>
         </div>
         <MonCard m={my} mine />
+      </div>
       </div>
 
       <div className={styles.panel}>

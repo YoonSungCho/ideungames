@@ -3,7 +3,7 @@ import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './he
 import { answerCurrent, openMath } from './math-helpers';
 import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 import { drop, openRain, popOne, seedRain } from './rain-helpers';
-import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir } from './monster-helpers';
+import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir, tapTile } from './monster-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -285,5 +285,34 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.getByRole('tab', { name: '📖 도감' }).click();
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-mon-dex.png`) });
+
+    // 전체 지도 · 새 지역 · 미니 게임
+    await page.goto('./#/games/hangul-monster');
+    await seedMonster(page, { map: 'mountain', x: 9, y: 9, party: [['beongae', 24], ['gugu', 25]], defeated: ['grunt0'], badges: 4 });
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-mountain.png`) });
+    await page.getByRole('button', { name: '전체 지도', exact: true }).click();
+    await page.waitForTimeout(500);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-worldmap.png`) });
+    await page.goto('./#/games/hangul-monster');
+    await seedMonster(page, { map: 'tower', x: 3, y: 13, party: [['gugu', 25]], defeated: ['grunt0'], badges: 5 });
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-tower.png`) });
+    await page.goto('./#/games/hangul-monster');
+    await seedMonster(page, { map: 'forest', x: 3, y: 6, defeated: ['grunt0'] });
+    await stepDir(page, '위로');
+    await finishDialog(page);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-sudoku.png`) });
+    await page.getByRole('button', { name: '그만하기' }).click();
+    await tapTile(page, 11, 15);
+    await expect.poll(() => page.locator('[data-player]').getAttribute('data-player')).toBe('11,15');
+    await stepDir(page, '위로');
+    await finishDialog(page);
+    await page.getByRole('button', { name: '▶ 시작' }).click();
+    await page.waitForTimeout(2500);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-rain.png`) });
   });
 }

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { battle, dialog, finishDialog, MONSTER, monState, playerAt, seedMonster, skipBeats, stepDir, tapTile, useMove, winBattle } from './monster-helpers';
+import { battle, dialog, findWild, finishDialog, MONSTER, monState, playerAt, seedMonster, skipBeats, stepDir, tapTile, useMove, winBattle } from './monster-helpers';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
@@ -214,4 +214,113 @@ test('키보드 화살표로 걷기', async ({ page, isMobile }) => {
   await expect.poll(() => playerAt(page)).toBe('4,5');
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => playerAt(page)).toBe('5,5');
+});
+
+test('🗺️ 전체 지도: 지금 있는 곳, 다음 목표, 잠긴 지역', async ({ page }) => {
+  await seedMonster(page, { map: 'forest', x: 9, y: 10, defeated: ['grunt0'] });
+  await expect(page.getByRole('button', { name: /다음 목표: 자음 숲 체육관/ })).toBeVisible();
+  await page.getByRole('button', { name: '전체 지도', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: '🗺️ 한글 나라 지도' });
+  await expect(sheet.getByRole('status')).toContainText('자음 관장 불꽃');
+  await expect(sheet.getByLabel('자음 숲, 지금 여기, 다음 목표')).toBeVisible();
+  await expect(sheet.getByLabel('뒤죽박죽 성, 아직 못 감')).toBeVisible();
+  await expect(sheet.getByLabel('내 위치')).toBeVisible();
+  await expect(sheet.getByLabel('목표', { exact: true })).toBeVisible();
+  await sheet.getByRole('button', { name: '닫기' }).click();
+  await expect(sheet).toBeHidden();
+});
+
+test('🧩 스도쿠 상자: 퍼즐을 다 풀면 상자가 열리고 선물', async ({ page }) => {
+  await seedMonster(page, { map: 'forest', x: 3, y: 6, defeated: ['grunt0'] });
+  await stepDir(page, '위로');
+  await expect(dialog(page)).toContainText('스도쿠 상자');
+  await finishDialog(page);
+  const grid = page.getByRole('grid', { name: '스도쿠 판' });
+  await expect(grid).toBeVisible();
+  // 틀린 숫자는 들어가지 않는다
+  const empty = grid.getByRole('gridcell', { name: /빈칸$/ });
+  const first = empty.first();
+  const ans = Number(await first.getAttribute('data-answer'));
+  await first.click();
+  await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: String((ans % 4) + 1), exact: true }).click();
+  await expect(first).toHaveAccessibleName(/빈칸$/);
+  while ((await empty.count()) > 0) {
+    const c = empty.first();
+    const a = await c.getAttribute('data-answer');
+    await c.click();
+    await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: a!, exact: true }).click();
+  }
+  await page.getByRole('button', { name: '🎁 선물 받기' }).click();
+  await expect(dialog(page)).toContainText('상자가 열렸다');
+  await finishDialog(page);
+  const s = await monState(page);
+  expect(s.picked).toContain('forest-box');
+  expect(s.items.ball).toBe(8);
+  await expect(page.getByRole('button', { name: '스도쿠 상자' })).toBeHidden();
+});
+
+test('☔ 숫자 비 꼬마: 떨어지는 숫자를 터뜨리고, 끝나면 코인', async ({ page }) => {
+  await page.clock.install();
+  await seedMonster(page, { map: 'forest', x: 11, y: 15, defeated: ['grunt0'] });
+  await stepDir(page, '위로');
+  await expect(dialog(page)).toContainText('숫자 비');
+  await finishDialog(page);
+  await page.getByRole('button', { name: '▶ 시작' }).click();
+  await page.clock.runFor(2000);
+  const drop = page.locator('[data-rain] [data-answer]').first();
+  await expect(drop).toBeAttached();
+  const a = await drop.getAttribute('data-answer');
+  await page.getByRole('group', { name: '숫자 패드' }).getByRole('button', { name: a!, exact: true }).click();
+  await expect(page.getByLabel('점수 1점')).toBeVisible();
+  await page.clock.runFor(50_000);
+  await page.getByRole('button', { name: '🎁 코인 받기' }).click();
+  await expect(dialog(page)).toContainText('터뜨렸구나');
+  await finishDialog(page);
+  expect((await monState(page)).coins).toBeGreaterThanOrEqual(103);
+});
+
+test('⚡ 빠른 계산 대결: 10문제를 풀면 시간에 따라 코인', async ({ page }) => {
+  await seedMonster(page, { map: 'beach', x: 7, y: 5, defeated: ['grunt0'], badges: 1 });
+  await stepDir(page, '위로');
+  await expect(dialog(page)).toContainText('10문제');
+  await finishDialog(page);
+  await page.getByRole('button', { name: '▶ 시작' }).click();
+  const pad = page.getByRole('group', { name: '숫자 패드' });
+  for (let i = 0; i < 10; i++) {
+    const p = page.locator('[data-answer]').first();
+    const a = (await p.getAttribute('data-answer'))!;
+    for (const d of a) await pad.getByRole('button', { name: d, exact: true }).click();
+    if (i < 9) await expect(page.getByText(`📝 ${i + 2} / 10`)).toBeVisible();
+  }
+  await page.getByRole('button', { name: '🎁 코인 받기' }).click();
+  await expect(dialog(page)).toContainText('10문제를');
+  await finishDialog(page);
+  const s = await monState(page);
+  expect(s.coins).toBeGreaterThan(100);
+  expect(s.items.ball).toBe(10);
+});
+
+test('숫자 몬스터의 기술은 숫자 문제, 모음 몬스터는 글자 짓기 기술도 쓴다', async ({ page }) => {
+  await seedMonster(page, { map: 'mountain', x: 3, y: 9, party: [['hana', 22], ['aya', 18]], defeated: ['grunt0'], badges: 4 });
+  await findWild(page);
+  await page.getByRole('button', { name: '⚔️ 싸우기' }).click();
+  await expect(page.getByRole('button', { name: '하나둘 번개' })).toBeVisible();
+  await page.getByRole('button', { name: '자릿수 썬더' }).click();
+  await expect(page.getByText('자릿수 썬더를 쓰려면')).toBeVisible();
+  await expect(page.getByText(/얼마일까|숫자로 쓰면/)).toBeVisible();
+  // 이어서 모음 몬스터로 바꿔 글자 짓기
+  await page.getByRole('group', { name: '보기' }).locator('[data-correct]').click();
+  for (let i = 0; i < 5 && (await battle(page).isVisible()); i++) {
+    await skipBeats(page);
+    if (!(await battle(page).isVisible())) break;
+    if (await page.getByRole('button', { name: '아야몽 내보내기' }).isVisible()) break;
+    await page.getByRole('button', { name: '🔄 친구' }).click();
+    await page.getByRole('button', { name: '아야몽 내보내기' }).click();
+    await skipBeats(page);
+    break;
+  }
+  if (await battle(page).isVisible()) {
+    await useMove(page, true, '글자 짓기 물보라');
+    await expect(page.getByText('글자 짓기 물보라를 쓰려면')).toBeHidden({ timeout: 4000 });
+  }
 });
