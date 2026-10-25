@@ -4,13 +4,13 @@ import { useAutoPause } from '@/shared/game/hooks';
 import { StartOverlay } from '@/shared/game/StartOverlay';
 import { useLeaveAsking, useLeaveGuard } from '@/shared/leaveGuard';
 import { useSettings } from '@/shared/settings/store';
+import { music, RAIN_SONG } from '@/shared/sound/music';
 import { hasProgress, useNumberRain } from './store';
 import { StatusBar, TopBar } from './ui/Bars';
 import { Field } from './ui/Field';
 import { Keypad } from './ui/Keypad';
 import { setupTitle } from './ui/labels';
 import { Menu } from './ui/Menu';
-import { music } from './ui/music';
 import { RecordsPage } from './ui/RecordsPage';
 import { ResultModal } from './ui/ResultModal';
 import styles from './ui/NumberRain.module.css';
@@ -54,13 +54,15 @@ function useKeyboard(enabled: boolean) {
 function useMusic(on: boolean) {
   const level = useNumberRain((s) => s.game?.level ?? 1);
   const fever = useNumberRain((s) => (s.game?.feverMs ?? 0) > 0);
-  useEffect(() => music.setLevel(level), [level]);
-  useEffect(() => music.setFever(fever), [fever]);
   useEffect(() => {
     if (!on) return;
-    music.start();
+    music.start(RAIN_SONG);
     return () => music.stop();
   }, [on]);
+  useEffect(() => {
+    music.setTempo(Math.min(176, RAIN_SONG.bpm + (level - 1) * 5 + (fever ? 12 : 0)));
+    music.setAlt(fever);
+  }, [level, fever, on]);
 }
 
 function Play() {

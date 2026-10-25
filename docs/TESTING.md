@@ -21,6 +21,7 @@
 | `e2e/quick-math.spec.ts` + `math-helpers.ts` | 빠른 계산: 메뉴·시작·정답/오답/정답 공개·20문제 완주·60초 종료(`page.clock`)·방식 전환·나가기/돌아오기·키보드 |
 | `e2e/hangul-hero.spec.ts` + `hero-helpers.ts` | 한글 용사: 프롤로그·잠금·지역 이야기 1회·단계 진행·정답 공개·음성 없음/있음(`speechSynthesis.getVoices` 대체)·그만하기→이어하기·보스전·엔딩·인증서. `seed()`로 진행 상태를 심는다 |
 | `e2e/number-rain.spec.ts` + `rain-helpers.ts` | 숫자 비: 시작 전엔 비가 안 내림·터뜨리기·틀림·폭탄·하트/얼음·두 자리와 ✔·목숨 다 잃으면 결과(`page.clock`)·나가기/새로고침/멈춤·음악 버튼·키보드. 물방울 답은 `data-answer`, 판은 멈출 때 저장되므로 `seedRain()`이 멈춤 → 저장소 수정 → 새로고침 |
+| `e2e/hangul-monster.spec.ts` + `monster-helpers.ts` | 한글 몬스터: 처음 시작·첫 친구·누른 칸으로 걷기·졸개 배틀(문제 맞혀 공격)·틀리면 정답 안내·수풀에서 잡기·전멸하면 센터·체육관 배지와 지기·상점·센터·배틀 중 나가기·메뉴·음악·키보드. `seedMonster()`로 위치·친구를 심고, 칸은 `data-xy`, 정답 보기는 `data-correct` |
 | `e2e/responsive.spec.ts` | 뷰포트 12종 × 게임·모드별: 가로 스크롤 없음, 버튼이 화면 안(스크롤 영역 안은 허용), 보드 칸 ≥30px, 카드 ≥40px, 세로는 보드가 폭을 채움, 가로는 카드가 보드 오른쪽. 클리어 창·기록 화면도 검사. 스크린샷을 `test-results/`에 남김 |
 
 ### 뷰포트 목록 (responsive.spec.ts)

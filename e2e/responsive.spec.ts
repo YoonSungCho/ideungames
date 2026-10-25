@@ -3,6 +3,7 @@ import { expectFitsViewport, openNewGame, placeOneCorrect, solveAll } from './he
 import { answerCurrent, openMath } from './math-helpers';
 import { GAME, seed, skipStory, solveCurrent } from './hero-helpers';
 import { drop, openRain, popOne, seedRain } from './rain-helpers';
+import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir } from './monster-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -221,5 +222,68 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await expect(page.getByRole('radiogroup', { name: '모드' })).toBeVisible();
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-rain-records.png`) });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`한글 몬스터 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('./#/games/hangul-monster');
+    await expect(page.getByRole('button', { name: '▶ 모험 시작' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-title.png`) });
+
+    // 마을 + 대화
+    await page.getByRole('button', { name: '▶ 모험 시작' }).click();
+    await expect(dialog(page)).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-dialog.png`) });
+    await finishDialog(page);
+    await stepDir(page, '위로');
+    await finishDialog(page);
+    await page.waitForTimeout(500); // 창이 뜨는 애니메이션
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-starter.png`) });
+
+    // 자음 숲 + 배틀
+    await seedMonster(page, { map: 'forest', x: 9, y: 10, party: [['giyeok', 12], ['aya', 9], ['ssak', 7]], defeated: ['grunt0'] });
+    await expectFitsViewport(page);
+    const dkey = (await page.getByRole('button', { name: '위로', exact: true }).boundingBox())!;
+    expect(Math.min(dkey.width, dkey.height), '방향 버튼 크기').toBeGreaterThanOrEqual(40);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-world.png`) });
+    await page.goto('./#/games/hangul-monster');
+    await seedMonster(page, { map: 'forest', x: 4, y: 9, party: [['giyeok', 12], ['aya', 9]], defeated: ['grunt0'] });
+    await stepDir(page, '위로');
+    await finishDialog(page);
+    await expect(battle(page)).toBeVisible();
+    await skipBeats(page);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-battle.png`) });
+    await page.getByRole('button', { name: '⚔️ 싸우기' }).click();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-moves.png`) });
+    await page.locator('[class*="moveBtn"]').nth(1).click();
+    await expect(page.getByRole('group', { name: '보기' })).toBeVisible();
+    await expectFitsViewport(page);
+    const opt = (await page.getByRole('group', { name: '보기' }).getByRole('button').first().boundingBox())!;
+    expect(Math.min(opt.width, opt.height), '보기 크기').toBeGreaterThanOrEqual(44);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-question.png`) });
+    await page.getByRole('group', { name: '보기' }).locator('[data-correct]').click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-hit.png`) });
+
+    // 메뉴 · 도감
+    await page.goto('./#/games/hangul-monster');
+    await seedMonster(page, { party: [['giga', 14], ['aya', 9], ['gom', 12]], seen: ['giyeok', 'giga', 'aya', 'gom', 'nieun'], caught: ['giyeok', 'giga', 'aya', 'gom'], badges: 2 });
+    await page.getByRole('button', { name: /메뉴/ }).click();
+    await page.waitForTimeout(500);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-party.png`) });
+    await page.getByRole('tab', { name: '📖 도감' }).click();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-mon-dex.png`) });
   });
 }
