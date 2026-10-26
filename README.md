@@ -4,6 +4,7 @@
 
 - 배포 주소: https://yoonsungcho.github.io/ideungames/
 - 게임
+  - 토리의 숫자 숲 (만 4~6세): 토끼 토리의 보름달 잔치를 준비하며 숲 9곳의 친구를 돕는 수 놀이 36단계 — 하나씩 눌러 세기(마지막 수 = 모두)·바구니 담기·한눈에 보기·많고 적음 → 징검다리 수 길에서 한 칸씩 깡충(몇 칸 = 몇 번 뛰기)·도착 맞히기 → 받으면 앞으로/주면 뒤로 뛰는 이야기 더하기·빼기(물건 수 = 토리 자리) → 10 만들기·빈칸 수 → 20까지 → 식과 이야기 문제. 문제·숫자를 모두 읽어 주고, 잘하면 조금씩 어려워지고 헤매면 쉬워짐, 섞어 놀기, 어른용 모두 열기
   - 스도쿠: 2×2 블록(4×4판) · 3×3 블록(9×9판), 쉬움 / 중간 / 어려움
   - 빠른 계산: 덧셈·뺄셈·곱셈(구구단)·나눗셈, 20문제 기록 / 60초 타임어택
   - 한글 용사: 뒤죽·박죽 마왕에게서 한글 나라 구하기 — 자음 마을 → 모음 바다 → 글자 성 → 받침 동굴 → 낱말 숲 → 반대말 다리 → 문장 하늘, 보스전·이야기·한글 도감
@@ -36,6 +37,7 @@ src/
     registry.ts       # games/*/manifest.ts 자동 수집
     types.ts          # GameManifest, 카테고리
     sudoku/           # 게임 1개 = 폴더 1개 (engine / store / records / ui)
+    bunny-math/       # 토리의 숫자 숲 (data/chapters: 9단원 36단계 설정, engine/tasks: 문제 만들기·난이도, engine/prompts: 화면 글과 읽어 줄 말, ui/Stones: 징검다리 수 길)
     quick-math/       # 빠른 계산
     coloring/         # 색칠 놀이 (data/pictures: 도안 조각·예시 색, engine/art: 칠·붓 선, ui/Drawing: CSS 없이 속성만 쓰는 SVG라 그대로 PNG 저장)
     hangul-monster/   # 한글 몬스터 (data: 몬스터·기술·지도·사람, engine: 배틀·걷기·성장, ui: MonsterArt(부품 조립 그림)·MapArt(SVG 지도)·Minis. 다른 게임 엔진을 모두 씀)

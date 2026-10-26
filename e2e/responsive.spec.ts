@@ -6,6 +6,7 @@ import { drop, openRain, popOne, seedRain } from './rain-helpers';
 import { battle, dialog, finishDialog, seedMonster, skipBeats, stepDir, tapTile } from './monster-helpers';
 import { cards, matchAll, matchPair, missPair, openMemory, startMemory } from './memory-helpers';
 import { joystick, mazeState, openMaze, press, route, walkToGoal } from './maze-helpers';
+import { GAME as BUNNY, currentTask as bunnyTask, finishLesson as bunnyFinish, seedBunny, startLesson as bunnyStart } from './bunny-helpers';
 
 /** 실제 기기 크기 (브라우저 주소창이 차지한 높이 포함) */
 const VIEWPORTS: Record<string, [number, number]> = {
@@ -487,5 +488,65 @@ for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
     await page.waitForTimeout(700);
     await expectFitsViewport(page);
     await page.screenshot({ path: info.outputPath(`${name}-color-done.png`) });
+  });
+}
+
+for (const [name, [width, height]] of Object.entries(VIEWPORTS)) {
+  test(`토리의 숫자 숲 화면 ${name} ${width}x${height}`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', '뷰포트별 검사는 한 번만');
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width, height });
+    await seedBunny(page, { seenAll: false });
+    await page.goto(BUNNY);
+    await expect(page.getByRole('dialog', { name: '처음 이야기' })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-bunny-story.png`) });
+
+    await seedBunny(page, { cleared: 2, unlockAll: true });
+    await page.goto(BUNNY);
+    await expect(page.getByLabel(/잔치에 올 친구/)).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-bunny-map.png`) });
+    await page.goto(`${BUNNY}/field`);
+    await expect(page.getByRole('button', { name: /^1단계/ })).toBeVisible();
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-bunny-chapter.png`) });
+
+    // 문제 종류별 화면: 세기·담기·접시 비교·깡충·도착·이야기(+/−)·수 비교·10 만들기·10과 몇·이야기 문제
+    const kinds = [['field', 1], ['field', 2], ['acorn', 3], ['stream', 1], ['stream', 3], ['shop', 2], ['cheese', 2], ['flower', 2], ['nest', 1], ['train', 0], ['train', 2], ['hill', 3]] as const;
+    for (const [c, l] of kinds) {
+      await bunnyStart(page, c, l);
+      const { t } = await bunnyTask(page);
+      // 물건 하나 눌러 보기 (번호가 붙은 모습까지)
+      if (t.kind === 'count' && t.tap) await page.getByRole('button', { name: /아직 안 셈/ }).first().click();
+      if (t.kind === 'story') await page.getByRole('button', { name: /^(선물|토리의) / }).first().click();
+      if (t.kind === 'hop') await page.getByRole('button', { name: '앞으로 깡충' }).click();
+      await expectFitsViewport(page);
+      const stage = (await page.locator('[data-task]').boundingBox())!;
+      const line = page.getByRole('group', { name: '수 길' });
+      if (await line.count()) {
+        const stone = (await line.getByRole('button').or(line.locator('span').filter({ hasText: /^\d+$/ })).first().boundingBox())!;
+        expect(stone.width, `돌 크기 ${c}${l}`).toBeGreaterThanOrEqual(width < 380 ? 26 : 28);
+      }
+      const opts = page.getByRole('group', { name: '보기' }).getByRole('button');
+      if (await opts.count()) {
+        const o = (await opts.first().boundingBox())!;
+        expect(Math.min(o.width, o.height), `보기 크기 ${c}${l}`).toBeGreaterThanOrEqual(44);
+        // 가로 화면: 보기는 장면 오른쪽
+        if (width > height && width >= 560) expect(o.x, `보기는 장면 오른쪽 ${c}${l}`).toBeGreaterThan(stage.x + stage.width);
+      }
+      for (const b of await page.locator('[data-task] button').all()) {
+        const r = await b.boundingBox();
+        if (r) expect(Math.min(r.width, r.height), `누르는 물건 ${c}${l}`).toBeGreaterThanOrEqual(26);
+      }
+      await page.screenshot({ path: info.outputPath(`${name}-bunny-${c}${l}.png`) });
+    }
+
+    // 결과 창
+    await bunnyStart(page, 'stream', 0);
+    await bunnyFinish(page);
+    await page.waitForTimeout(600);
+    await expectFitsViewport(page);
+    await page.screenshot({ path: info.outputPath(`${name}-bunny-result.png`) });
   });
 }
